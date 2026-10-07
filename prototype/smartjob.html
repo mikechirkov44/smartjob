@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartJob — платформа оценки вовлечённости</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --primary:#6366f1; --primary-dark:#4f46e5; --primary-light:#eef2ff;
+  --violet:#8b5cf6; --cyan:#06b6d4; --success:#10b981;
+  --warning:#f59e0b; --danger:#ef4444; --pink:#ec4899;
+  --ink:#0f172a; --text:#1e293b; --muted:#64748b; --soft:#94a3b8;
+  --border:#e2e8f0; --bg:#f8fafc; --card:#ffffff;
+  --shadow-sm:0 1px 3px rgba(15,23,42,.06);
+  --shadow:0 4px 20px rgba(15,23,42,.06);
+  --shadow-lg:0 20px 40px -12px rgba(99,102,241,.18);
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit}
+svg{display:block;flex-shrink:0}
+.screen{display:none;min-height:100vh}
+.screen.active{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.container{max-width:1180px;margin:0 auto;padding:0 24px}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--border)}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.02em}
+.logo-mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--primary),var(--violet));display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 6px 14px -4px rgba(99,102,241,.5)}
+.logo-mark svg{width:20px;height:20px}
+.nav{display:flex;gap:4px;align-items:center}
+.nav-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);transition:all .15s;text-decoration:none}
+.nav-btn:hover{color:var(--text);background:#f1f5f9}
+.nav-btn.active{color:var(--primary-dark);background:var(--primary-light)}
+@media(max-width:820px){.nav-btn span:not([data-ico]){display:none}.nav-btn{padding:9px 10px}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:12px;font-size:15px;font-weight:600;transition:transform .15s,box-shadow .15s,background .2s,color .2s;white-space:nowrap}
+.btn svg{width:18px;height:18px}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--violet));color:#fff;box-shadow:0 8px 20px -6px rgba(99,102,241,.55)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 26px -6px rgba(99,102,241,.65)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-secondary{background:#fff;color:var(--text);border:1.5px solid var(--border);box-shadow:var(--shadow-sm)}
+.btn-secondary:hover{border-color:var(--primary);color:var(--primary-dark);background:#fafbff}
+.btn-ghost{color:var(--muted);padding:10px 14px;font-size:14px}
+.btn-ghost:hover{color:var(--text);background:#f1f5f9}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:9px}
+.btn-sm svg{width:16px;height:16px}
+.btn-danger{background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca}
+.btn-danger:hover{background:#fee2e2}
+
+.draft-banner{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #fcd34d;border-radius:14px;padding:16px 20px;margin:16px 0 0;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.draft-banner .txt{display:flex;align-items:center;gap:12px;font-size:14px;color:#78350f;flex:1;min-width:220px}
+.draft-banner .txt strong{color:#451a03}
+.draft-banner .actions{display:flex;gap:8px;flex-wrap:wrap}
+.draft-banner .actions .btn{padding:8px 16px;font-size:13px;border-radius:9px}
+.draft-banner .btn-continue{background:#78350f;color:#fff}
+.draft-banner .btn-continue:hover{background:#451a03;transform:translateY(-1px)}
+.draft-banner .btn-discard{background:transparent;border:1.5px solid #78350f;color:#78350f}
+.draft-banner .btn-discard:hover{background:rgba(120,53,15,.08)}
+
+.hero{position:relative;padding:64px 0 48px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(60% 50% at 80% 0%, rgba(139,92,246,.10), transparent 70%),radial-gradient(50% 40% at 0% 20%, rgba(6,182,212,.08), transparent 70%)}
+.hero-grid{position:absolute;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(99,102,241,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.05) 1px,transparent 1px);background-size:48px 48px;-webkit-mask-image:radial-gradient(ellipse at center,black 40%,transparent 80%);mask-image:radial-gradient(ellipse at center,black 40%,transparent 80%)}
+.hero-inner{position:relative;z-index:1;max-width:720px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:100px;font-size:13px;font-weight:600;background:var(--primary-light);color:var(--primary-dark);margin-bottom:20px;border:1px solid #e0e7ff}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px rgba(16,185,129,.18)}
+h1.hero-title{font-size:clamp(28px,4.4vw,46px);font-weight:800;line-height:1.1;letter-spacing:-.03em;margin-bottom:18px}
+h1.hero-title .grad{background:linear-gradient(135deg,var(--primary),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-sub{font-size:16px;color:var(--muted);max-width:560px;margin-bottom:28px;line-height:1.6}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:40px}
+.hero-stats-row{display:flex;gap:32px;flex-wrap:wrap;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+.hero-stats-row b{color:var(--text);font-weight:700}
+
+.section-head{margin-bottom:28px}
+.section-head h2{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.section-head p{color:var(--muted);font-size:15px}
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:var(--radius);padding:24px;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+
+.survey-wrap{max-width:800px;margin:0 auto;padding:32px 24px 80px}
+.survey-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:16px}
+.progress-wrap{flex:1}
+.progress-meta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:500}
+.progress-bar{height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden}
+.progress-fill{height:100%;width:0;border-radius:100px;background:linear-gradient(90deg,var(--primary),var(--violet));transition:width .4s cubic-bezier(.4,0,.2,1)}
+.question-card{background:var(--card);border-radius:20px;padding:44px;border:1px solid var(--border);box-shadow:var(--shadow);animation:slideIn .4s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.q-tag{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:100px;font-size:13px;font-weight:600;background:var(--primary-light);color:var(--primary-dark);margin-bottom:20px}
+.q-tag svg{width:15px;height:15px}
+.q-tag.loyalty{background:#fce7f3;color:#be185d}
+.q-tag.satisfaction{background:#cffafe;color:#0e7490}
+.q-tag.pulse{background:#fef3c7;color:#b45309}
+.q-text{font-size:23px;font-weight:700;line-height:1.35;letter-spacing:-.015em;margin-bottom:32px;min-height:64px;color:var(--ink)}
+.likert{display:flex;flex-direction:column;gap:10px}
+.likert-option{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:14px;border:1.5px solid var(--border);background:#fff;text-align:left;font-size:15px;color:var(--text);transition:all .15s;font-weight:500}
+.likert-option:hover{border-color:#c7d2fe;background:#fafbff;transform:translateX(2px)}
+.likert-option.selected{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark);font-weight:600;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.likert-face{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:var(--muted);flex-shrink:0}
+.likert-face svg{width:20px;height:20px}
+.likert-option.selected .likert-face{background:var(--primary);color:#fff}
+.likert-label{flex:1}
+.likert-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--soft);background:#f1f5f9;flex-shrink:0}
+.likert-option.selected .likert-num{background:#fff;color:var(--primary-dark)}
+.survey-nav{display:flex;justify-content:space-between;margin-top:28px;gap:12px}
+.enps-row{display:flex;flex-wrap:wrap;gap:8px}
+.enps-btn{flex:1 1 auto;min-width:60px;padding:18px 8px;border-radius:12px;border:1.5px solid var(--border);background:#fff;font-size:18px;font-weight:700;color:var(--text);transition:all .15s}
+.enps-btn:hover{border-color:#c7d2fe;background:#fafbff;transform:translateY(-2px)}
+.enps-btn.selected{background:linear-gradient(135deg,var(--primary),var(--violet));color:#fff;border-color:transparent;box-shadow:0 8px 18px -6px rgba(99,102,241,.55)}
+.enps-hint{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--muted)}
+
+.index-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+@media(max-width:900px){.index-grid{grid-template-columns:1fr 1fr}}
+.index-card{background:#fff;border-radius:var(--radius);padding:22px;border:1px solid var(--border);position:relative;overflow:hidden;box-shadow:var(--shadow-sm)}
+.index-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--violet))}
+.index-card.cyan::before{background:linear-gradient(90deg,var(--cyan),#0ea5e9)}
+.index-card.pink::before{background:linear-gradient(90deg,var(--pink),var(--violet))}
+.index-card.amber::before{background:linear-gradient(90deg,var(--warning),var(--pink))}
+.index-card .label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.index-card .value{font-size:36px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-bottom:6px}
+.index-card .hint{font-size:13px;color:var(--muted)}
+.chart-card{background:#fff;border-radius:var(--radius);padding:24px;border:1px solid var(--border);box-shadow:var(--shadow-sm);margin-bottom:24px}
+.chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.chart-head h3{font-size:16px;font-weight:700}
+.chart-wrap{position:relative;height:320px}
+.metric-list{display:flex;flex-direction:column;gap:10px}
+.metric-row{display:flex;align-items:center;gap:16px;padding:8px 0}
+.metric-row .m-name{width:190px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.metric-row .m-name svg{width:16px;height:16px;color:var(--muted)}
+.metric-row .m-bar{flex:1;height:8px;background:#eef2f7;border-radius:100px;overflow:hidden}
+.metric-row .m-fill{height:100%;border-radius:100px;transition:width .9s cubic-bezier(.4,0,.2,1)}
+.metric-row .m-val{width:48px;text-align:right;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.recs{display:flex;flex-direction:column;gap:10px}
+.rec{display:flex;gap:14px;padding:16px 18px;border-radius:12px;border:1px solid var(--border);background:#fff}
+.rec.warn{background:#fffbeb;border-color:#fde68a}
+.rec.crit{background:#fef2f2;border-color:#fecaca}
+.rec.ok{background:#f0fdf4;border-color:#bbf7d0}
+.rec .rec-ico{width:36px;height:36px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted)}
+.rec.warn .rec-ico{color:#d97706;background:#fef3c7}
+.rec.crit .rec-ico{color:#dc2626;background:#fee2e2}
+.rec.ok .rec-ico{color:#059669;background:#d1fae5}
+.rec .rec-ico svg{width:18px;height:18px}
+.rec h4{font-size:14px;font-weight:700;margin-bottom:3px}
+.rec p{font-size:13px;color:var(--muted)}
+
+.admin-tabs{display:flex;gap:6px;padding:6px;background:#fff;border-radius:14px;border:1px solid var(--border);margin-bottom:24px;overflow-x:auto}
+.admin-tab{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);transition:all .15s;white-space:nowrap}
+.admin-tab:hover{color:var(--text);background:#f1f5f9}
+.admin-tab.active{color:#fff;background:linear-gradient(135deg,var(--primary),var(--violet));box-shadow:0 6px 14px -4px rgba(99,102,241,.5)}
+.admin-tab svg{width:16px;height:16px}
+.admin-panel{display:none}
+.admin-panel.active{display:block;animation:fade .3s ease}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.panel-head h2{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.panel-head p{font-size:13px;color:var(--muted);margin-top:2px}
+.data-table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid var(--border)}
+.data-table th,.data-table td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table th{background:#f8fafc;font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:#fafbff}
+.data-table td.actions{text-align:right;white-space:nowrap}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;color:var(--muted);transition:all .15s;margin-left:4px}
+.icon-btn:hover{background:var(--primary-light);color:var(--primary-dark)}
+.icon-btn.danger:hover{background:#fee2e2;color:#dc2626}
+.icon-btn svg{width:16px;height:16px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:12px;font-weight:700;background:#f1f5f9;color:var(--muted)}
+.pill.ok{background:#d1fae5;color:#065f46}
+.pill.warn{background:#fef3c7;color:#92400e}
+.pill.info{background:#dbeafe;color:#1e40af}
+.empty-state{padding:60px 24px;text-align:center;background:#fff;border-radius:14px;border:1px dashed var(--border)}
+.empty-state .ico{width:56px;height:56px;border-radius:16px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.empty-state .ico svg{width:26px;height:26px}
+.empty-state h3{font-size:17px;font-weight:700;margin-bottom:6px}
+.empty-state p{font-size:14px;color:var(--muted);margin-bottom:20px}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.form-grid .full{grid-column:1/-1}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.input{width:100%;padding:11px 14px;border-radius:11px;border:1.5px solid var(--border);font-size:14px;outline:none;transition:border .15s,box-shadow .15s;background:#fff;color:var(--text)}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.input.error{border-color:var(--danger);box-shadow:0 0 0 3px rgba(239,68,68,.1)}
+.input-hint{font-size:12px;color:var(--danger);margin-top:4px;display:none}
+.input-hint.show{display:block}
+
+.data-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+@media(max-width:600px){.data-actions{grid-template-columns:1fr}}
+.data-card{display:flex;gap:12px;padding:16px;border-radius:12px;border:1px solid var(--border);background:#fafbff;align-items:flex-start}
+.data-card.danger{background:#fef2f2;border-color:#fecaca}
+.data-card .dc-ico{width:38px;height:38px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--primary)}
+.data-card.danger .dc-ico{color:var(--danger)}
+.data-card .dc-ico svg{width:18px;height:18px}
+.data-card .dc-body{flex:1}
+.data-card h4{font-size:14px;font-weight:700;margin-bottom:3px}
+.data-card p{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.4}
+.data-card .btn{padding:7px 12px;font-size:12px;border-radius:8px}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:150;padding:24px}
+.modal-backdrop.show{display:flex;animation:fade .2s}
+.modal{background:#fff;border-radius:20px;padding:32px;max-width:560px;width:100%;box-shadow:0 30px 60px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto}
+.modal h3{font-size:20px;font-weight:800;margin-bottom:6px;letter-spacing:-.02em}
+.modal .sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--ink);color:#fff;padding:14px 22px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);z-index:200;box-shadow:0 12px 30px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;max-width:90vw}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast svg{width:18px;height:18px;flex-shrink:0}
+.toast.error{background:#7f1d1d}
+.toast.success{background:#064e3b}
+
+[data-ico]{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle}
+
+@media(max-width:480px){
+  .container{padding:0 16px}
+  .hero{padding:40px 0 32px}
+  h1.hero-title{font-size:28px}
+  .hero-sub{font-size:15px}
+  .hero-stats-row{gap:20px;font-size:12px}
+  .question-card{padding:24px 20px}
+  .q-text{font-size:19px;min-height:auto;margin-bottom:24px}
+  .likert-option{padding:14px 16px;gap:12px}
+  .likert-face{width:32px;height:32px}
+  .likert-face svg{width:18px;height:18px}
+  .likert-num{width:26px;height:26px;font-size:12px}
+  .enps-btn{min-width:40px;padding:14px 4px;font-size:16px}
+  .index-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .index-card{padding:16px}
+  .index-card .value{font-size:28px}
+  .chart-card{padding:16px}
+  .section-head h2{font-size:22px}
+  .admin-tabs{padding:4px}
+  .admin-tab{padding:8px 12px;font-size:13px}
+  .data-table th,.data-table td{padding:10px 12px;font-size:13px}
+  .panel-head h2{font-size:18px}
+  .btn{padding:10px 18px;font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<script>
+const P = {
+  logo:'<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>',
+  userCheck:'<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="m17 11 2 2 4-4"/>',
+  target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  award:'<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
+  message:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  userPlus:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>',
+  scale:'<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+  trending:'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  briefcase:'<rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  hourglass:'<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+  sparkles:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/>',
+  building:'<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/>',
+  gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>',
+  wallet:'<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+  shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+  barChart:'<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  arrowRight:'<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  arrowLeft:'<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  play:'<polygon points="6 3 20 12 6 21 6 3"/>',
+  alertTriangle:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  xCircle:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+  checkCircle:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+  dashboard:'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  edit:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  folder:'<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  clipboard:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  save:'<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
+  lock:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  fileText:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  database:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
+  fileCsv:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/>',
+  smile:'<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>',
+  frown:'<circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>',
+  meh:'<circle cx="12" cy="12" r="10"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>',
+  thumbsUp:'<path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>',
+  downloadCloud:'<path d="M12 17V9"/><polyline points="9 12 12 15 15 12"/><path d="M20.4 10.4A5.5 5.5 0 0 0 15 4.5 5 5 0 0 0 5.2 7.5 4.5 4.5 0 0 0 4.5 16H6"/>',
+  fileImage:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="2"/><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"/>'
+};
+function ico(n,s){s=s||20;return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(P[n]||'')+'</svg>'}
+function hydrateIcons(root){(root||document).querySelectorAll('[data-ico]').forEach(el=>{if(el.dataset.hydrated)return;el.innerHTML=ico(el.dataset.ico,parseInt(el.dataset.size)||20);el.dataset.hydrated='1'})}
+</script>
+
+<div class="topbar">
+  <div class="container topbar-inner">
+    <div class="logo">
+      <div class="logo-mark"><span data-ico="logo" data-size="22"></span></div>
+      <span>SmartJob</span>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-nav="landing" onclick="showScreen('landing')">
+        <span data-ico="dashboard" data-size="16"></span><span>Главная</span>
+      </button>
+      <button class="nav-btn" data-nav="results" onclick="openResults()">
+        <span data-ico="barChart" data-size="16"></span><span>Результаты</span>
+      </button>
+      <button class="nav-btn" data-nav="admin" onclick="openAdmin()">
+        <span data-ico="settings" data-size="16"></span><span>Управление</span>
+      </button>
+      <a class="nav-btn" href="smartjob-analytics.html">
+        <span data-ico="trending" data-size="16"></span><span>Аналитика</span>
+      </a>
+    </nav>
+  </div>
+</div>
+
+<div id="landing" class="screen active">
+  <div class="container">
+    <div id="draft-banner-wrap"></div>
+  </div>
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="container hero-inner">
+      <div class="hero-badge"><span class="dot"></span>Методика Happy Job · α Кронбаха 0.93</div>
+      <h1 class="hero-title">Узнайте, что <span class="grad">драйвит</span> вашу команду</h1>
+      <p class="hero-sub">Вовлечённость, лояльность и удовлетворённость сотрудников. 30 вопросов · 5 минут · мгновенный отчёт.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="openStartModal()">
+          <span data-ico="play" data-size="18"></span> Начать опрос
+        </button>
+        <button class="btn btn-secondary" onclick="startPulse()">
+          <span data-ico="zap" data-size="18"></span> Пульс-опрос
+        </button>
+      </div>
+      <div class="hero-stats-row">
+        <div><b>19</b> метрик</div>
+        <div><b>96 822</b> респондента</div>
+        <div><b>0.93</b> надёжность</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="survey" class="screen">
+  <div class="survey-wrap">
+    <div class="survey-top">
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span id="p-text">Вопрос 1 из 30</span>
+          <span id="p-pct">3%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="p-fill"></div></div>
+      </div>
+      <button class="btn btn-ghost" onclick="exitSurvey()">
+        <span data-ico="x" data-size="16"></span><span>Выйти</span>
+      </button>
+    </div>
+    <div class="question-card" id="q-card"></div>
+    <div class="survey-nav">
+      <button class="btn btn-secondary" id="btn-back" onclick="prevQ()">
+        <span data-ico="arrowLeft" data-size="18"></span> Назад
+      </button>
+      <button class="btn btn-primary" id="btn-next" onclick="nextQ()" disabled>
+        Далее <span data-ico="arrowRight" data-size="18"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="results" class="screen">
+  <div class="container" style="padding-top:32px;padding-bottom:48px">
+    <div class="section-head">
+      <h2>Результаты оценки</h2>
+      <p id="res-sub">Сводный отчёт по методике SmartJob</p>
+    </div>
+    <div id="pdf-content">
+      <div class="index-grid" id="index-grid"></div>
+      <div class="grid grid-2" style="margin-bottom:24px">
+        <div class="chart-card" style="margin-bottom:0">
+          <div class="chart-head"><h3>Профиль вовлечённости</h3></div>
+          <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+        </div>
+        <div class="chart-card" style="margin-bottom:0">
+          <div class="chart-head"><h3>eNPS — готовность рекомендовать</h3></div>
+          <div class="chart-wrap"><canvas id="enpsChart"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><h3>Детализация по метрикам</h3></div>
+        <div class="metric-list" id="metric-list"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head"><h3>Рекомендации по улучшению</h3></div>
+        <div class="recs" id="recs"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="exportPDF()" id="btn-pdf">
+        <span data-ico="fileImage" data-size="18"></span> Скачать PDF
+      </button>
+      <button class="btn btn-secondary" onclick="downloadTxt()">
+        <span data-ico="fileText" data-size="18"></span> Скачать TXT
+      </button>
+      <button class="btn btn-secondary" onclick="restart()">
+        <span data-ico="refresh" data-size="18"></span> Пройти заново
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="admin" class="screen">
+  <div class="container" style="padding-top:32px;padding-bottom:48px">
+    <div class="section-head">
+      <h2>Управление</h2>
+      <p>Отделы, сотрудники, опросы и настройки компании</p>
+    </div>
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="departments" onclick="switchTab('departments')">
+        <span data-ico="folder" data-size="16"></span> Отделы
+      </button>
+      <button class="admin-tab" data-tab="employees" onclick="switchTab('employees')">
+        <span data-ico="users" data-size="16"></span> Сотрудники
+      </button>
+      <button class="admin-tab" data-tab="surveys" onclick="switchTab('surveys')">
+        <span data-ico="clipboard" data-size="16"></span> Опросы
+      </button>
+      <button class="admin-tab" data-tab="settings" onclick="switchTab('settings')">
+        <span data-ico="settings" data-size="16"></span> Настройки
+      </button>
+    </div>
+
+    <div class="admin-panel active" data-panel="departments">
+      <div class="panel-head">
+        <div><h2>Отделы компании</h2><p>Структурные подразделения для сегментации данных</p></div>
+        <button class="btn btn-primary" onclick="openDeptModal()">
+          <span data-ico="plus" data-size="18"></span> Добавить отдел
+        </button>
+      </div>
+      <div id="depts-content"></div>
+    </div>
+
+    <div class="admin-panel" data-panel="employees">
+      <div class="panel-head">
+        <div><h2>Сотрудники</h2><p>Список для рассылки приглашений и сегментации</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" onclick="triggerCSVImport()">
+            <span data-ico="fileCsv" data-size="16"></span> Импорт CSV
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="seedEmployees()">
+            <span data-ico="refresh" data-size="16"></span> Демо-данные
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openEmpModal()">
+            <span data-ico="userPlus" data-size="16"></span> Добавить
+          </button>
+        </div>
+      </div>
+      <input type="file" id="csv-input" accept=".csv,.txt" style="display:none" onchange="importCSV(event)">
+      <div id="emps-content"></div>
+    </div>
+
+    <div class="admin-panel" data-panel="surveys">
+      <div class="panel-head">
+        <div><h2>Опросы</h2><p>Создание и управление опросами вовлечённости</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" onclick="seedResponses()">
+            <span data-ico="refresh" data-size="16"></span> Сгенерировать ответы
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openSurveyModal()">
+            <span data-ico="plus" data-size="16"></span> Создать опрос
+          </button>
+        </div>
+      </div>
+      <div id="surveys-content"></div>
+    </div>
+
+    <div class="admin-panel" data-panel="settings">
+      <div class="panel-head">
+        <div><h2>Настройки компании</h2><p>Базовые параметры и управление данными</p></div>
+      </div>
+
+      <div class="card" style="max-width:720px;margin-bottom:20px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Профиль компании</h3>
+        <div class="field">
+          <label>Название компании</label>
+          <input class="input" id="set-company" placeholder="ООО «Ромашка»">
+        </div>
+        <div class="field" style="margin-top:16px">
+          <label>Отрасль</label>
+          <select class="input" id="set-industry">
+            <option>IT / Разработка ПО</option>
+            <option>Финансы / Банки</option>
+            <option>Ритейл / E-commerce</option>
+            <option>Производство</option>
+            <option>Образование</option>
+            <option>Медицина</option>
+            <option>Услуги / Консалтинг</option>
+            <option>Другое</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top:16px">
+          <label>Периодичность опросов</label>
+          <select class="input" id="set-frequency">
+            <option>Ежеквартально</option>
+            <option>Раз в полгода</option>
+            <option>Ежемесячно</option>
+            <option>Еженедельно (пульс)</option>
+          </select>
+        </div>
+        <div style="margin-top:20px">
+          <button class="btn btn-primary" onclick="saveSettings()">
+            <span data-ico="save" data-size="18"></span> Сохранить
+          </button>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:720px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:6px">Управление данными</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Все данные хранятся локально в вашем браузере</p>
+        <div class="data-actions">
+          <div class="data-card">
+            <div class="dc-ico"><span data-ico="downloadCloud" data-size="18"></span></div>
+            <div class="dc-body">
+              <h4>Скачать бэкап</h4>
+              <p>Экспорт всех данных в JSON-файл</p>
+              <button class="btn btn-secondary" onclick="backupAllData()">
+                <span data-ico="download" data-size="14"></span> Скачать
+              </button>
+            </div>
+          </div>
+          <div class="data-card">
+            <div class="dc-ico"><span data-ico="upload" data-size="18"></span></div>
+            <div class="dc-body">
+              <h4>Восстановить из бэкапа</h4>
+              <p>Загрузить JSON-файл и восстановить данные</p>
+              <button class="btn btn-secondary" onclick="triggerRestore()">
+                <span data-ico="upload" data-size="14"></span> Загрузить
+              </button>
+            </div>
+          </div>
+          <div class="data-card">
+            <div class="dc-ico"><span data-ico="database" data-size="18"></span></div>
+            <div class="dc-body">
+              <h4>Экспорт ответов (CSV)</h4>
+              <p>Таблица со всеми ответами для Excel</p>
+              <button class="btn btn-secondary" onclick="exportResponsesCSV()">
+                <span data-ico="fileCsv" data-size="14"></span> Экспорт
+              </button>
+            </div>
+          </div>
+          <div class="data-card danger">
+            <div class="dc-ico"><span data-ico="trash" data-size="18"></span></div>
+            <div class="dc-body">
+              <h4>Сбросить всё</h4>
+              <p>Удалить все данные без возможности восстановления</p>
+              <button class="btn btn-danger" onclick="resetAllData()">
+                <span data-ico="trash" data-size="14"></span> Сбросить
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-start">
+  <div class="modal">
+    <h3>Начать полный опрос</h3>
+    <p class="sub">Заполните поля (необязательно) — это поможет сформировать персональный отчёт.</p>
+    <div class="form-grid">
+      <div class="field"><label>Имя</label><input class="input" id="in-name" placeholder="Анна"></div>
+      <div class="field"><label>Отдел</label><select class="input" id="in-dept"></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="startFull()">
+        <span data-ico="play" data-size="18"></span> Начать
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-dept">
+  <div class="modal">
+    <h3 id="dept-modal-title">Добавить отдел</h3>
+    <p class="sub">Название появится в форме опроса и в аналитике</p>
+    <div class="field">
+      <label>Название отдела</label>
+      <input class="input" id="dept-name" placeholder="Например, Разработка">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveDept()">
+        <span data-ico="check" data-size="18"></span> Сохранить
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-emp">
+  <div class="modal">
+    <h3 id="emp-modal-title">Добавить сотрудника</h3>
+    <p class="sub">Данные используются только локально</p>
+    <div class="form-grid">
+      <div class="field full">
+        <label>ФИО</label>
+        <input class="input" id="emp-name" placeholder="Иванова Анна Сергеевна">
+        <div class="input-hint" id="hint-emp-name">Введите ФИО</div>
+      </div>
+      <div class="field full">
+        <label>Email</label>
+        <input class="input" id="emp-email" type="email" placeholder="anna@company.ru">
+        <div class="input-hint" id="hint-emp-email">Некорректный email</div>
+      </div>
+      <div class="field">
+        <label>Отдел</label>
+        <select class="input" id="emp-dept"></select>
+      </div>
+      <div class="field">
+        <label>Грейд</label>
+        <select class="input" id="emp-grade">
+          <option>Junior</option><option>Middle</option><option>Senior</option>
+          <option>Lead</option><option>Head</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveEmployee()">
+        <span data-ico="check" data-size="18"></span> Сохранить
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-survey">
+  <div class="modal">
+    <h3>Создать опрос</h3>
+    <p class="sub">Название и тип опроса</p>
+    <div class="form-grid">
+      <div class="field full">
+        <label>Название</label>
+        <input class="input" id="sv-name" placeholder="Опрос вовлечённости Q1 2026">
+      </div>
+      <div class="field">
+        <label>Тип</label>
+        <select class="input" id="sv-type">
+          <option value="full">Полный (30 вопросов)</option>
+          <option value="pulse">Пульс-опрос (7 вопросов)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Дата закрытия</label>
+        <input class="input" id="sv-close" type="date">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveSurvey()">
+        <span data-ico="check" data-size="18"></span> Создать
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-confirm">
+  <div class="modal">
+    <h3 id="confirm-title">Подтверждение</h3>
+    <p class="sub" id="confirm-text"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" id="confirm-ok">Подтвердить</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreFromFile(event)">
+<div class="toast" id="toast"></div>
+
+<script>
+const LIKERT = [
+  {v:1, icon:'frown',    label:'Совсем не согласен'},
+  {v:2, icon:'meh',      label:'Скорее не согласен'},
+  {v:3, icon:'meh',      label:'Нейтрально'},
+  {v:4, icon:'smile',    label:'Скорее согласен'},
+  {v:5, icon:'thumbsUp', label:'Полностью согласен'}
+];
+const ICON_BY_METRIC = {
+  'Руководитель':'userCheck','Стратегия':'target','Признание':'award','Обратная связь':'message',
+  'Процессы':'settings','Изменения':'refresh','Коллеги':'users','Баланс':'scale','Карьера':'trending',
+  'Условия и оплата':'briefcase','Гордится компанией':'heart','Рекомендует компанию':'megaphone',
+  'Остается сейчас':'clock','Остается в будущем':'hourglass','Интерес':'sparkles',
+  'Условия труда':'building','Льготы':'gift','Оплата':'wallet','Безопасность':'shield'
+};
+const SURVEY = [
+  {m:'Руководитель',t:'engagement',q:'Мой руководитель чётко ставит задачи и объясняет ожидаемые результаты'},
+  {m:'Руководитель',t:'engagement',q:'Я доверяю своему руководителю и чувствую поддержку с его стороны'},
+  {m:'Стратегия',t:'engagement',q:'Я понимаю стратегию и цели своей компании'},
+  {m:'Стратегия',t:'engagement',q:'Цели компании реалистичны и адаптируются к изменениям'},
+  {m:'Признание',t:'engagement',q:'Меня признают за хорошо выполненную работу'},
+  {m:'Признание',t:'engagement',q:'В компании принято искренне и своевременно хвалить сотрудников'},
+  {m:'Обратная связь',t:'engagement',q:'Я регулярно получаю полезную обратную связь от руководителя'},
+  {m:'Обратная связь',t:'engagement',q:'Обратная связь помогает мне улучшать результаты работы'},
+  {m:'Процессы',t:'engagement',q:'Я проявляю инициативу и предлагаю улучшения в работе'},
+  {m:'Процессы',t:'engagement',q:'Мне интересны задачи, которые я выполняю'},
+  {m:'Изменения',t:'engagement',q:'У меня достаточно ресурсов для выполнения сложных задач'},
+  {m:'Изменения',t:'engagement',q:'Я своевременно информирован о предстоящих изменениях в компании'},
+  {m:'Коллеги',t:'engagement',q:'В моей команде комфортная и доверительная атмосфера'},
+  {m:'Коллеги',t:'engagement',q:'Коммуникация с коллегами эффективна и конструктивна'},
+  {m:'Баланс',t:'engagement',q:'У меня есть возможность поддерживать баланс работы и личной жизни'},
+  {m:'Баланс',t:'engagement',q:'Я могу заботиться о своём здоровье и психологическом комфорте'},
+  {m:'Карьера',t:'engagement',q:'Я вижу возможности для профессионального роста в компании'},
+  {m:'Карьера',t:'engagement',q:'У меня достаточно автономии в принятии рабочих решений'},
+  {m:'Условия и оплата',t:'engagement',q:'Я удовлетворён условиями труда на своём рабочем месте'},
+  {m:'Условия и оплата',t:'engagement',q:'Уровень оплаты труда справедлив для моей должности'},
+  {m:'Гордится компанией',t:'loyalty',q:'Я горжусь тем, что работаю в этой компании'},
+  {m:'Рекомендует компанию',t:'loyalty',q:'Я готов(а) рекомендовать компанию как работодателя'},
+  {m:'Остается сейчас',t:'loyalty',q:'Я не думаю о переходе на другую работу в ближайшее время'},
+  {m:'Остается в будущем',t:'loyalty',q:'Я планирую работать в компании ещё как минимум 2 года'},
+  {m:'Интерес',t:'satisfaction',q:'Моя работа интересна и увлекательна'},
+  {m:'Условия труда',t:'satisfaction',q:'Условия труда на моём рабочем месте комфортны'},
+  {m:'Льготы',t:'satisfaction',q:'Социальный пакет и льготы соответствуют моим ожиданиям'},
+  {m:'Оплата',t:'satisfaction',q:'Уровень оплаты труда соответствует моему вкладу'},
+  {m:'Безопасность',t:'satisfaction',q:'Я чувствую себя в безопасности на рабочем месте'}
+];
+const PULSE = [
+  {m:'Руководитель',q:'Я знаю, чего от меня ожидают на работе'},
+  {m:'Условия и оплата',q:'У меня есть материалы и оборудование для качественной работы'},
+  {m:'Карьера',q:'У меня есть возможность делать то, что я умею лучше всего'},
+  {m:'Признание',q:'За последние 7 дней меня похвалили за хорошую работу'},
+  {m:'Руководитель',q:'Мой руководитель заботится обо мне как о личности'},
+  {m:'Карьера',q:'В компании поощряют моё развитие'},
+  {m:'Процессы',q:'Моё мнение учитывается при принятии решений'}
+];
+
+const LS = {
+  RESPONSES: 'smartjob_responses_v1',
+  DEPTS: 'smartjob_departments_v1',
+  EMPS: 'smartjob_employees_v1',
+  SURVEYS: 'smartjob_surveys_v1',
+  COMPANY: 'smartjob_company_v1',
+  DRAFT: 'smartjob_draft_v1'
+};
+const DEFAULT_DEPTS = ['Продукт','Маркетинг','Продажи','HR','Финансы','IT','Операции'];
+const BACKUP_VERSION = '1.0';
+const ALL_KEYS = ['RESPONSES','DEPTS','EMPS','SURVEYS','COMPANY'];
+
+function loadResponses(){try{return JSON.parse(localStorage.getItem(LS.RESPONSES))||[]}catch(e){return[]}}
+function saveResponses(a){localStorage.setItem(LS.RESPONSES, JSON.stringify(a))}
+function loadDepartments(){
+  try{const d = JSON.parse(localStorage.getItem(LS.DEPTS)); if(Array.isArray(d)) return d}catch(e){}
+  localStorage.setItem(LS.DEPTS, JSON.stringify(DEFAULT_DEPTS));
+  return DEFAULT_DEPTS.slice();
+}
+function saveDepartments(a){localStorage.setItem(LS.DEPTS, JSON.stringify(a))}
+function loadEmployees(){try{return JSON.parse(localStorage.getItem(LS.EMPS))||[]}catch(e){return[]}}
+function saveEmployees(a){localStorage.setItem(LS.EMPS, JSON.stringify(a))}
+function loadSurveys(){try{return JSON.parse(localStorage.getItem(LS.SURVEYS))||[]}catch(e){return[]}}
+function saveSurveys(a){localStorage.setItem(LS.SURVEYS, JSON.stringify(a))}
+function loadCompany(){
+  try{return JSON.parse(localStorage.getItem(LS.COMPANY))||{name:'', industry:'IT / Разработка ПО', frequency:'Ежеквартально'}}catch(e){return{name:'',industry:'IT / Разработка ПО',frequency:'Ежеквартально'}}
+}
+function saveCompany(c){localStorage.setItem(LS.COMPANY, JSON.stringify(c))}
+
+function saveDraft(){
+  if(!state.mode) return;
+  try{
+    const draft = {
+      mode: state.mode, idx: state.idx, answers: state.answers,
+      enps: state.enps, name: state.name, dept: state.dept,
+      updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem(LS.DRAFT, JSON.stringify(draft));
+  }catch(e){}
+}
+function loadDraft(){try{return JSON.parse(localStorage.getItem(LS.DRAFT))}catch(e){return null}}
+function clearDraft(){localStorage.removeItem(LS.DRAFT)}
+
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
+function round2(v){return Math.round(v*100)/100}
+function scoreColor(v){
+  if(v>=4.3)return '#10b981';
+  if(v>=3.7)return '#22c55e';
+  if(v>=3.0)return '#f59e0b';
+  if(v>=2.3)return '#f97316';
+  return '#ef4444';
+}
+function scoreLabel(v){
+  if(v>=4.3)return 'Высокий';
+  if(v>=3.7)return 'Хороший';
+  if(v>=3.0)return 'Средний';
+  if(v>=2.3)return 'Низкий';
+  return 'Критический';
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.topbar .nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.nav===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function toast(msg, type){
+  const t=document.getElementById('toast');
+  t.className = 'toast' + (type?' '+type:'');
+  t.innerHTML = ico(type==='error'?'xCircle':'checkCircle',18)+'<span>'+msg+'</span>';
+  t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600);
+}
+function uid(prefix){return (prefix||'id')+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function isValidEmail(e){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)}
+function fmtDate(iso){return iso?new Date(iso).toLocaleDateString('ru-RU'):'—'}
+function fmtDateTime(iso){return iso?new Date(iso).toLocaleString('ru-RU'):'—'}
+
+function confirmDialog(title, text, okText, cb){
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-text').textContent = text;
+  const btn = document.getElementById('confirm-ok');
+  btn.textContent = okText || 'Подтвердить';
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+  newBtn.onclick = ()=>{ closeModal(); cb(); };
+  document.getElementById('modal-confirm').classList.add('show');
+}
+
+function closeModal(){document.querySelectorAll('.modal-backdrop').forEach(m=>m.classList.remove('show'))}
+document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal()}));
+function populateDeptSelects(){
+  const depts = loadDepartments();
+  ['in-dept','emp-dept'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = depts.map(d=>'<option>'+escapeHtml(d)+'</option>').join('') || '<option value="">— нет отделов —</option>';
+    if(cur && depts.includes(cur)) sel.value = cur;
+  });
+}
+function openStartModal(){
+  populateDeptSelects();
+  document.getElementById('modal-start').classList.add('show');
+}
+
+function renderDraftBanner(){
+  const wrap = document.getElementById('draft-banner-wrap');
+  if(!wrap) return;
+  const draft = loadDraft();
+  if(!draft || !draft.mode) { wrap.innerHTML=''; return; }
+  const total = draft.mode==='pulse' ? PULSE.length : SURVEY.length + 1;
+  const subtitle = draft.mode==='pulse'
+    ? 'Пульс-опрос · вопрос ' + (draft.idx+1) + ' из ' + PULSE.length
+    : 'Полный опрос · вопрос ' + (draft.idx+1) + ' из ' + total;
+  const updated = draft.updatedAt ? fmtDateTime(draft.updatedAt) : '';
+  wrap.innerHTML =
+    '<div class="draft-banner">'+
+      '<div class="txt">'+ico('alertTriangle',20)+
+        '<div><strong>Незавершённый опрос</strong><br>'+
+        '<span style="font-size:13px;opacity:.85">'+subtitle+(updated?' · обновлён '+updated:'')+'</span></div>'+
+      '</div>'+
+      '<div class="actions">'+
+        '<button class="btn btn-continue" onclick="continueDraft()">Продолжить</button>'+
+        '<button class="btn btn-discard" onclick="discardDraft()">Удалить</button>'+
+      '</div>'+
+    '</div>';
+}
+function continueDraft(){
+  const draft = loadDraft();
+  if(!draft){ renderDraftBanner(); return; }
+  state.mode = draft.mode;
+  state.idx = draft.idx || 0;
+  state.answers = draft.answers || {};
+  state.enps = draft.enps;
+  state.name = draft.name || '';
+  state.dept = draft.dept || '';
+  showScreen('survey');
+  if(state.idx >= (state.mode==='pulse'?PULSE.length:SURVEY.length)) renderEnps();
+  else renderQ();
+}
+function discardDraft(){
+  confirmDialog('Удалить черновик?', 'Все промежуточные ответы будут потеряны.', 'Удалить', ()=>{
+    clearDraft(); renderDraftBanner(); toast('Черновик удалён');
+  });
+}
+
+function checkDuplicate(name, dept){
+  if(!name) return null;
+  const resp = loadResponses();
+  const cutoff = Date.now() - 30*86400000;
+  return resp.find(r=>{
+    if(!r.name) return false;
+    if(r.name.toLowerCase() !== name.toLowerCase()) return false;
+    if(dept && r.dept && r.dept !== dept) return false;
+    if(new Date(r.date).getTime() < cutoff) return false;
+    return true;
+  }) || null;
+}
+
+let state = {mode:'full', idx:0, answers:{}, enps:null, name:'', dept:'', charts:{}, report:null};
+
+function startFull(){
+  const nameInput = document.getElementById('in-name').value.trim();
+  const dept = document.getElementById('in-dept').value;
+  if(nameInput){
+    const dup = checkDuplicate(nameInput, dept);
+    if(dup){
+      confirmDialog('Похоже, вы уже проходили опрос',
+        'Запись с именем «'+nameInput+'» уже есть (от '+fmtDateTime(dup.date)+'). Пройти ещё раз?',
+        'Пройти',
+        ()=>reallyStartFull(nameInput, dept));
+      return;
+    }
+  }
+  reallyStartFull(nameInput, dept);
+}
+function reallyStartFull(name, dept){
+  state.mode='full'; state.idx=0; state.answers={}; state.enps=null;
+  state.name = name || ''; state.dept = dept || '';
+  clearDraft(); closeModal(); showScreen('survey'); renderQ();
+}
+function startPulse(){
+  state.mode='pulse'; state.idx=0; state.answers={}; state.enps=null;
+  state.name=''; state.dept='';
+  clearDraft(); showScreen('survey'); renderQ();
+}
+function exitSurvey(){
+  confirmDialog('Выйти из опроса?', 'Ответы сохранятся как черновик — можно будет продолжить позже.', 'Выйти', ()=>{
+    saveDraft(); renderDraftBanner(); showScreen('landing'); toast('Черновик сохранён');
+  });
+}
+function getQuestions(){ return state.mode==='pulse' ? PULSE : SURVEY }
+
+function renderQ(){
+  const Q = getQuestions();
+  const item = Q[state.idx];
+  if(!item) return finishSurvey();
+  const card = document.getElementById('q-card');
+  const tagClass = state.mode==='pulse' ? 'pulse' : (item.t==='loyalty'?'loyalty':item.t==='satisfaction'?'satisfaction':'');
+  const tagIcon = ICON_BY_METRIC[item.m]||'target';
+  const tagLabel = state.mode==='pulse' ? 'Пульс · Gallup Q12' : (item.t==='loyalty'?'Лояльность':item.t==='satisfaction'?'Удовлетворённость':'Вовлечённость');
+  let html = '<div class="q-tag '+tagClass+'">'+ico(tagIcon,15)+' '+item.m+' · '+tagLabel+'</div>';
+  html += '<div class="q-text">'+item.q+'</div>';
+  html += '<div class="likert">';
+  LIKERT.forEach(o=>{
+    const sel = state.answers[state.idx]===o.v ? 'selected' : '';
+    html += '<button class="likert-option '+sel+'" data-v="'+o.v+'">'+
+      '<span class="likert-face">'+ico(o.icon,20)+'</span>'+
+      '<span class="likert-label">'+o.label+'</span>'+
+      '<span class="likert-num">'+o.v+'</span></button>';
+  });
+  html += '</div>';
+  card.innerHTML = html;
+  card.querySelectorAll('.likert-option').forEach(b=>{
+    b.onclick = ()=>{
+      state.answers[state.idx] = parseInt(b.dataset.v);
+      saveDraft();
+      card.querySelectorAll('.likert-option').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      document.getElementById('btn-next').disabled = false;
+      setTimeout(()=>{ if(state.idx < getQuestions().length-1) nextQ(); }, 260);
+    };
+  });
+  const total = state.mode==='pulse' ? Q.length : Q.length+1;
+  const cur = state.idx+1;
+  const pct = Math.round(cur/total*100);
+  document.getElementById('p-text').textContent = 'Вопрос '+cur+' из '+total;
+  document.getElementById('p-pct').textContent = pct+'%';
+  document.getElementById('p-fill').style.width = pct+'%';
+  document.getElementById('btn-back').style.visibility = state.idx===0?'hidden':'visible';
+  document.getElementById('btn-next').disabled = state.answers[state.idx]===undefined;
+  document.getElementById('btn-next').innerHTML = (state.idx===Q.length-1 ? (state.mode==='pulse'?'Завершить':'Далее') : 'Далее') + ' '+ico('arrowRight',18);
+}
+function nextQ(){
+  const Q = getQuestions();
+  if(state.idx < Q.length-1){ state.idx++; renderQ(); }
+  else if(state.mode==='full'){ renderEnps(); }
+  else { finishSurvey(); }
+}
+function prevQ(){ if(state.idx>0){ state.idx--; renderQ(); } }
+
+function renderEnps(){
+  const card = document.getElementById('q-card');
+  let html = '<div class="q-tag loyalty">'+ico('megaphone',15)+' Лояльность · eNPS</div>';
+  html += '<div class="q-text">Какова вероятность, что вы порекомендуете компанию как место работы?</div>';
+  html += '<div class="enps-row">';
+  for(let i=0;i<=10;i++) html += '<button class="enps-btn" data-v="'+i+'">'+i+'</button>';
+  html += '</div>';
+  html += '<div class="enps-hint"><span>0 — точно нет</span><span>10 — обязательно да</span></div>';
+  card.innerHTML = html;
+  card.querySelectorAll('.enps-btn').forEach(b=>{
+    b.onclick = ()=>{
+      state.enps = parseInt(b.dataset.v);
+      saveDraft();
+      card.querySelectorAll('.enps-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      document.getElementById('btn-next').disabled = false;
+      setTimeout(finishSurvey, 280);
+    };
+  });
+  document.getElementById('p-text').textContent = 'Вопрос 31 из 31';
+  document.getElementById('p-pct').textContent = '100%';
+  document.getElementById('p-fill').style.width = '100%';
+  document.getElementById('btn-back').style.visibility='visible';
+  document.getElementById('btn-next').disabled=true;
+  document.getElementById('btn-next').innerHTML = 'Завершить '+ico('check',18);
+}
+
+function calculateResults(){
+  const Q = getQuestions();
+  const groups = {engagement:{}, loyalty:{}, satisfaction:{}};
+  Q.forEach((item,i)=>{
+    const val = state.answers[i] ?? 3;
+    const type = state.mode==='pulse' ? 'engagement' : item.t;
+    if(!groups[type]) groups[type] = {};
+    if(!groups[type][item.m]) groups[type][item.m] = {sum:0,n:0,icon:ICON_BY_METRIC[item.m]};
+    groups[type][item.m].sum += val;
+    groups[type][item.m].n++;
+  });
+  const toArr = g => Object.entries(g).map(([name,d])=>({name,score:round2(d.sum/d.n),icon:d.icon}));
+  const em = toArr(groups.engagement);
+  const lm = toArr(groups.loyalty||{});
+  const sm = toArr(groups.satisfaction||{});
+  return {
+    id: uid('r'), date: new Date().toISOString(),
+    name: state.name, dept: state.dept, mode: state.mode,
+    engagementIndex: round2(avg(em.map(x=>x.score))),
+    loyaltyIndex: round2(avg(lm.map(x=>x.score))),
+    satisfactionIndex: round2(avg(sm.map(x=>x.score))),
+    enps: state.enps!==null ? state.enps : Math.round(avg(em.map(x=>x.score))/5*10),
+    engagementMetrics: em, loyaltyMetrics: lm, satisfactionMetrics: sm
+  };
+}
+function finishSurvey(){
+  const r = calculateResults();
+  state.report = r;
+  if(state.mode==='full'){
+    const arr = loadResponses(); arr.push(r); saveResponses(arr);
+  }
+  clearDraft(); renderDraftBanner();
+  renderResults(r); showScreen('results');
+}
+
+function renderResults(r){
+  document.getElementById('res-sub').textContent =
+    (r.name ? r.name+', ' : '') + 'ваш отчёт' + (r.dept ? ' · '+r.dept : '') +
+    ' · ' + (r.mode==='pulse' ? 'пульс-опрос (Gallup Q12)' : 'полный опрос');
+  const cards = [
+    {label:'Вовлечённость', val:r.engagementIndex},
+    {label:'Лояльность', val:r.loyaltyIndex, cls:'cyan'},
+    {label:'Удовлетворённость', val:r.satisfactionIndex, cls:'pink'},
+    {label:'eNPS', val:r.enps, isEnps:true, cls:'amber'}
+  ];
+  document.getElementById('index-grid').innerHTML = cards.map(c=>{
+    if(c.isEnps){
+      const col = c.val>=9?'#10b981':c.val>=7?'#22c55e':c.val>=5?'#f59e0b':'#ef4444';
+      const lbl = c.val>=9?'Промоутер':c.val>=7?'Пассивный':c.val>=5?'Нейтральный':'Критик';
+      return '<div class="index-card '+c.cls+'"><div class="label">'+c.label+'</div><div class="value" style="color:'+col+'">'+c.val+'</div><div class="hint">'+lbl+' · из 10</div></div>';
+    }
+    return '<div class="index-card '+(c.cls||'')+'"><div class="label">'+c.label+'</div><div class="value" style="color:'+scoreColor(c.val)+'">'+c.val+'</div><div class="hint">'+scoreLabel(c.val)+' · из 5.0</div></div>';
+  }).join('');
+  if(state.charts.radar){state.charts.radar.destroy()}
+  const rc = document.getElementById('radarChart').getContext('2d');
+  state.charts.radar = new Chart(rc,{
+    type:'radar',
+    data:{labels:r.engagementMetrics.map(m=>m.name),
+      datasets:[{data:r.engagementMetrics.map(m=>m.score),
+        backgroundColor:'rgba(99,102,241,.15)', borderColor:'#6366f1', borderWidth:2,
+        pointBackgroundColor:'#6366f1', pointBorderColor:'#fff', pointBorderWidth:2, pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},
+      scales:{r:{min:0,max:5,ticks:{stepSize:1,display:false,backdropColor:'transparent'},
+        grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},
+        pointLabels:{font:{size:11,family:'Inter',weight:'600'},color:'#64748b'}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.r.toFixed(2)}}}
+    }
+  });
+  if(state.charts.enps){state.charts.enps.destroy()}
+  const ec = document.getElementById('enpsChart').getContext('2d');
+  const eVal = r.enps;
+  state.charts.enps = new Chart(ec,{
+    type:'doughnut',
+    data:{labels:['Критики 0–6','Пассивные 7–8','Промоутеры 9–10'],
+      datasets:[{data:[eVal<=6?1:0, eVal>=7&&eVal<=8?1:0, eVal>=9?1:0],
+        backgroundColor:['#ef4444','#f59e0b','#10b981'], borderWidth:0, hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'72%',animation:{duration:600},
+      plugins:{legend:{position:'bottom',labels:{font:{size:12,family:'Inter',weight:'600'},padding:14,usePointStyle:true,pointStyle:'circle'}}}
+    }
+  });
+  const all = [
+    ...r.engagementMetrics.map(m=>({...m,type:'Вовлечённость'})),
+    ...r.loyaltyMetrics.map(m=>({...m,type:'Лояльность'})),
+    ...r.satisfactionMetrics.map(m=>({...m,type:'Удовлетворённость'}))
+  ].sort((a,b)=>b.score-a.score);
+  document.getElementById('metric-list').innerHTML = all.map(m=>{
+    const pct = Math.round(m.score/5*100);
+    const col = scoreColor(m.score);
+    return '<div class="metric-row">'+
+      '<div class="m-name">'+ico(m.icon||'target',16)+' '+m.name+'</div>'+
+      '<div class="m-bar"><div class="m-fill" style="width:'+pct+'%;background:'+col+'"></div></div>'+
+      '<div class="m-val" style="color:'+col+'">'+m.score.toFixed(2)+'</div></div>';
+  }).join('');
+  const recs = [];
+  const worst = all.slice().sort((a,b)=>a.score-b.score).slice(0,3);
+  worst.forEach(m=>{
+    if(m.score<3.2){
+      recs.push({level:m.score<2.3?'crit':'warn', icon:m.score<2.3?'xCircle':'alertTriangle',
+        title:m.name+' — '+scoreLabel(m.score).toLowerCase()+' уровень ('+m.score+')',
+        text:recommendationFor(m.name)});
+    }
+  });
+  const best = all[0];
+  if(best && best.score>=4.3){
+    recs.push({level:'ok',icon:'checkCircle',title:best.name+' — сильная сторона ('+best.score+')',
+      text:'Поддерживайте текущий уровень и делитесь практиками с другими командами.'});
+  }
+  if(eVal>=9) recs.push({level:'ok',icon:'checkCircle',title:'Вы — промоутер компании',
+    text:'Высокая готовность рекомендовать работодателя.'});
+  else if(eVal<=6) recs.push({level:'crit',icon:'xCircle',title:'Низкий eNPS',
+    text:'Изучите причины неготовности рекомендовать компанию.'});
+  if(recs.length===0) recs.push({level:'ok',icon:'checkCircle',title:'Все метрики в норме',
+    text:'Явных проблем не выявлено. Продолжайте регулярные замеры.'});
+  document.getElementById('recs').innerHTML = recs.map(r=>
+    '<div class="rec '+r.level+'"><div class="rec-ico">'+ico(r.icon,18)+'</div>'+
+    '<div><h4>'+r.title+'</h4><p>'+r.text+'</p></div></div>').join('');
+}
+function recommendationFor(name){
+  const map = {
+    'Руководитель':'Обучение руководителей навыкам обратной связи и постановки задач. Регулярные 1:1.',
+    'Стратегия':'Усильте информирование о целях компании. Внедрите OKR для каскадирования стратегии.',
+    'Признание':'Внедрите практику своевременной похвалы: еженедельные ритуалы признания.',
+    'Обратная связь':'Обучите руководителей модели конструктивной обратной связи (SBI, BOOST).',
+    'Процессы':'Проанализируйте узкие места. Вовлекайте сотрудников в улучшения (кайдзен).',
+    'Изменения':'Улучшите коммуникацию изменений: рассказывайте «зачем», обеспечьте ресурсами.',
+    'Коллеги':'Проведите командные сессии по психологической безопасности и ролям.',
+    'Баланс':'Пересмотрите нагрузку, внедрите гибкий график, следите за переработками.',
+    'Карьера':'Сформируйте прозрачные карьерные треки и индивидуальные планы развития.',
+    'Условия и оплата':'Проведите бенчмаркинг зарплат и аудит рабочих условий.',
+    'Гордится компанией':'Усильте информирование о миссии и успехах, рассказывайте истории сотрудников.',
+    'Рекомендует компанию':'Работайте над EVP и репутацией работодателя.',
+    'Остается сейчас':'Изучите драйверы удержания: карьера, оплата, баланс, отношения с руководителем.',
+    'Остается в будущем':'Предложите долгосрочные программы: грейды, опционы, развитие.',
+    'Интерес':'Обогатите работу: новые задачи, проекты, ротация.',
+    'Условия труда':'Проведите аудит рабочего пространства и эргономики.',
+    'Льготы':'Пересмотрите соцпакет, добавьте гибкие льготы (кафетерий).',
+    'Оплата':'Проведите обзор заработных плат и прозрачности системы вознаграждения.',
+    'Безопасность':'Усильте меры безопасности и информирование о них.'
+  };
+  return map[name]||'Проанализируйте причины в фокус-группе и разработайте план улучшений.';
+}
+
+function downloadTxt(){
+  if(!state.report) return toast('Сначала пройдите опрос','error');
+  const r = state.report;
+  const date = new Date().toLocaleString('ru-RU');
+  let t = 'SMARTJOB — ОТЧЁТ\n'+'='.repeat(50)+'\n';
+  t += 'Дата: '+date+'\n';
+  t += 'Сотрудник: '+(r.name||'не указан')+'\n';
+  t += 'Отдел: '+(r.dept||'не указан')+'\n';
+  t += 'Режим: '+(r.mode==='pulse'?'Пульс-опрос':'Полный опрос')+'\n\n';
+  t += 'СВОДНЫЕ ИНДЕКСЫ:\n';
+  t += '  Вовлечённость:      '+r.engagementIndex+' / 5.0\n';
+  t += '  Лояльность:         '+r.loyaltyIndex+' / 5.0\n';
+  t += '  Удовлетворённость:  '+r.satisfactionIndex+' / 5.0\n';
+  t += '  eNPS:               '+r.enps+' / 10\n';
+  downloadFile(t, 'smartjob-report-'+Date.now()+'.txt', 'text/plain');
+  toast('TXT скачан','success');
+}
+function downloadFile(content, name, type){
+  const blob = new Blob([content], {type:type+';charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function exportPDF(){
+  if(!state.report) return toast('Сначала пройдите опрос','error');
+  const btn = document.getElementById('btn-pdf');
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = ico('refresh',18) + ' Готовим PDF...';
+  try {
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
+    const target = document.getElementById('pdf-content');
+    const canvas = await html2canvas(target, {scale:2,backgroundColor:'#ffffff',logging:false,useCORS:true});
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const r = state.report;
+    const company = loadCompany();
+    pdf.setFontSize(18); pdf.setTextColor(15,23,42);
+    pdf.text('SmartJob · Отчёт по вовлечённости', margin, 15);
+    pdf.setFontSize(10); pdf.setTextColor(100,116,139);
+    let subline = [];
+    if(company.name) subline.push(company.name);
+    if(r.name) subline.push('Сотрудник: '+r.name);
+    if(r.dept) subline.push('Отдел: '+r.dept);
+    subline.push('Дата: '+new Date().toLocaleDateString('ru-RU'));
+    pdf.text(subline.join('  ·  '), margin, 21);
+    const imgData = canvas.toDataURL('image/png');
+    const imgW = pageW - margin*2;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    let y = 28;
+    if(imgH <= pageH - y - margin){
+      pdf.addImage(imgData, 'PNG', margin, y, imgW, imgH);
+    } else {
+      let remaining = imgH, offset = 0;
+      while(remaining > 0){
+        const avail = pageH - y - margin;
+        const part = Math.min(avail, remaining);
+        const sy = (offset / imgH) * canvas.height;
+        const sh = (part / imgH) * canvas.height;
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width; pageCanvas.height = sh;
+        pageCanvas.getContext('2d').drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+        const partData = pageCanvas.toDataURL('image/png');
+        pdf.addImage(partData, 'PNG', margin, y, imgW, part);
+        remaining -= part; offset += part;
+        if(remaining > 0){ pdf.addPage(); y = margin; }
+      }
+    }
+    pdf.save('smartjob-report-'+Date.now()+'.pdf');
+    toast('PDF скачан','success');
+  } catch(err){
+    console.error(err);
+    toast('Не удалось создать PDF','error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
+}
+function loadScriptOnce(src){
+  return new Promise((resolve, reject)=>{
+    if([...document.scripts].some(s=>s.src===src)) return resolve();
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function backupAllData(){
+  const payload = {version: BACKUP_VERSION, exportedAt: new Date().toISOString(), data: {}};
+  ALL_KEYS.forEach(k=>{
+    const raw = localStorage.getItem(LS[k]);
+    if(raw !== null){
+      try{ payload.data[k] = JSON.parse(raw); }catch(e){ payload.data[k] = raw; }
+    }
+  });
+  payload.stats = {
+    responses: (payload.data.RESPONSES||[]).length,
+    employees: (payload.data.EMPS||[]).length,
+    departments: (payload.data.DEPTS||[]).length,
+    surveys: (payload.data.SURVEYS||[]).length
+  };
+  downloadFile(JSON.stringify(payload, null, 2), 'smartjob-backup-'+Date.now()+'.json', 'application/json');
+  toast('Бэкап скачан','success');
+}
+function triggerRestore(){ document.getElementById('restore-input').click(); }
+function restoreFromFile(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try {
+      const payload = JSON.parse(reader.result);
+      if(!payload.data || typeof payload.data !== 'object') throw new Error('bad format');
+      const stats = payload.stats || {};
+      const summary = 'Ответов: '+(stats.responses||0)+', сотрудников: '+(stats.employees||0)+', отделов: '+(stats.departments||0)+', опросов: '+(stats.surveys||0);
+      confirmDialog('Восстановить из бэкапа?', summary + '. Текущие данные будут перезаписаны.', 'Восстановить', ()=>{
+        ALL_KEYS.forEach(k=>{
+          if(payload.data[k] !== undefined) localStorage.setItem(LS[k], JSON.stringify(payload.data[k]));
+        });
+        toast('Данные восстановлены','success');
+        setTimeout(()=>location.reload(), 700);
+      });
+    } catch(err){
+      console.error(err);
+      toast('Файл повреждён или не является бэкапом SmartJob','error');
+    }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+}
+function exportResponsesCSV(){
+  const data = loadResponses();
+  if(!data.length) return toast('Нет данных для экспорта','error');
+  const metrics = ['Руководитель','Стратегия','Признание','Обратная связь','Процессы','Изменения','Коллеги','Баланс','Карьера','Условия и оплата'];
+  const loy = ['Гордится компанией','Рекомендует компанию','Остается сейчас','Остается в будущем'];
+  const sat = ['Интерес','Условия труда','Льготы','Оплата','Безопасность'];
+  const header = ['id','date','name','dept','mode','engagementIndex','loyaltyIndex','satisfactionIndex','enps',
+    ...metrics.map(m=>'E_'+m), ...loy.map(m=>'L_'+m), ...sat.map(m=>'S_'+m)];
+  const rows = data.map(r=>{
+    const eMap = Object.fromEntries((r.engagementMetrics||[]).map(x=>[x.name,x.score]));
+    const lMap = Object.fromEntries((r.loyaltyMetrics||[]).map(x=>[x.name,x.score]));
+    const sMap = Object.fromEntries((r.satisfactionMetrics||[]).map(x=>[x.name,x.score]));
+    return [r.id,r.date,r.name||'',r.dept||'',r.mode||'full',r.engagementIndex,r.loyaltyIndex,r.satisfactionIndex,r.enps,
+      ...metrics.map(m=>eMap[m]??''), ...loy.map(m=>lMap[m]??''), ...sat.map(m=>sMap[m]??'')];
+  });
+  const csv = [header, ...rows].map(row=>row.map(v=>{
+    const s = String(v);
+    return /[",;\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+  }).join(';')).join('\n');
+  downloadFile('\uFEFF'+csv, 'smartjob-responses-'+Date.now()+'.csv', 'text/csv');
+  toast('CSV экспортирован','success');
+}
+
+function openAdmin(){ renderAdmin(); showScreen('admin'); }
+function switchTab(tab){
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===tab));
+}
+function renderAdmin(){
+  renderDepartmentsPanel(); renderEmployeesPanel(); renderSurveysPanel(); renderSettingsPanel();
+  populateDeptSelects(); hydrateIcons();
+}
+
+let deptEditIndex = -1;
+function openDeptModal(idx){
+  deptEditIndex = typeof idx==='number' ? idx : -1;
+  const title = document.getElementById('dept-modal-title');
+  const input = document.getElementById('dept-name');
+  if(deptEditIndex>=0){ title.textContent = 'Редактировать отдел'; input.value = loadDepartments()[deptEditIndex] || ''; }
+  else { title.textContent = 'Добавить отдел'; input.value = ''; }
+  document.getElementById('modal-dept').classList.add('show');
+  setTimeout(()=>input.focus(),100);
+}
+function saveDept(){
+  const name = document.getElementById('dept-name').value.trim();
+  if(!name) return toast('Введите название','error');
+  const depts = loadDepartments();
+  if(deptEditIndex>=0){
+    const oldName = depts[deptEditIndex];
+    if(depts.includes(name) && name!==oldName) return toast('Такой отдел уже есть','error');
+    depts[deptEditIndex] = name;
+    const emps = loadEmployees(); emps.forEach(e=>{if(e.dept===oldName) e.dept = name}); saveEmployees(emps);
+    const resp = loadResponses(); resp.forEach(r=>{if(r.dept===oldName) r.dept = name}); saveResponses(resp);
+  } else {
+    if(depts.includes(name)) return toast('Такой отдел уже есть','error');
+    depts.push(name);
+  }
+  saveDepartments(depts); closeModal(); renderAdmin();
+  toast(deptEditIndex>=0?'Отдел обновлён':'Отдел добавлен','success');
+  deptEditIndex = -1;
+}
+function editDept(i){openDeptModal(i)}
+function deleteDept(i){
+  const depts = loadDepartments();
+  const name = depts[i];
+  const emps = loadEmployees().filter(e=>e.dept===name);
+  const msg = emps.length ? 'В отделе «'+name+'» есть '+emps.length+' сотрудник(ов). Удалить?' : 'Удалить отдел «'+name+'»?';
+  confirmDialog('Удалить отдел?', msg, 'Удалить', ()=>{
+    depts.splice(i,1); saveDepartments(depts); renderAdmin(); toast('Отдел удалён');
+  });
+}
+function renderDepartmentsPanel(){
+  const depts = loadDepartments();
+  const emps = loadEmployees();
+  const el = document.getElementById('depts-content');
+  if(!depts.length){
+    el.innerHTML = '<div class="empty-state"><div class="ico">'+ico('folder',26)+'</div><h3>Нет отделов</h3><p>Добавьте первый отдел, чтобы сегментировать данные</p><button class="btn btn-primary" onclick="openDeptModal()"><span data-ico="plus" data-size="18"></span> Добавить отдел</button></div>';
+    hydrateIcons(el); return;
+  }
+  let html = '<table class="data-table"><thead><tr><th>Название</th><th>Сотрудников</th><th>Опросов</th><th style="width:120px"></th></tr></thead><tbody>';
+  const resp = loadResponses();
+  depts.forEach((d,i)=>{
+    const empCount = emps.filter(e=>e.dept===d).length;
+    const respCount = resp.filter(r=>r.dept===d).length;
+    html += '<tr><td><strong>'+escapeHtml(d)+'</strong></td><td>'+empCount+'</td><td>'+respCount+'</td>'+
+      '<td class="actions">'+
+      '<button class="icon-btn" onclick="editDept('+i+')" title="Редактировать">'+ico('edit',16)+'</button>'+
+      '<button class="icon-btn danger" onclick="deleteDept('+i+')" title="Удалить">'+ico('trash',16)+'</button>'+
+      '</td></tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html; hydrateIcons(el);
+}
+
+let empEditId = null;
+function openEmpModal(id){
+  empEditId = id || null;
+  const title = document.getElementById('emp-modal-title');
+  populateDeptSelects();
+  document.getElementById('hint-emp-name').classList.remove('show');
+  document.getElementById('hint-emp-email').classList.remove('show');
+  document.getElementById('emp-name').classList.remove('error');
+  document.getElementById('emp-email').classList.remove('error');
+  if(empEditId){
+    const e = loadEmployees().find(x=>x.id===empEditId);
+    if(e){
+      title.textContent = 'Редактировать сотрудника';
+      document.getElementById('emp-name').value = e.name||'';
+      document.getElementById('emp-email').value = e.email||'';
+      document.getElementById('emp-dept').value = e.dept||'';
+      document.getElementById('emp-grade').value = e.grade||'Middle';
+    }
+  } else {
+    title.textContent = 'Добавить сотрудника';
+    document.getElementById('emp-name').value = '';
+    document.getElementById('emp-email').value = '';
+    document.getElementById('emp-dept').value = loadDepartments()[0]||'';
+    document.getElementById('emp-grade').value = 'Middle';
+  }
+  document.getElementById('modal-emp').classList.add('show');
+  setTimeout(()=>document.getElementById('emp-name').focus(),100);
+}
+function saveEmployee(){
+  const nameEl = document.getElementById('emp-name');
+  const emailEl = document.getElementById('emp-email');
+  const name = nameEl.value.trim();
+  const email = emailEl.value.trim();
+  const dept = document.getElementById('emp-dept').value;
+  const grade = document.getElementById('emp-grade').value;
+  nameEl.classList.remove('error'); emailEl.classList.remove('error');
+  document.getElementById('hint-emp-name').classList.remove('show');
+  document.getElementById('hint-emp-email').classList.remove('show');
+  let hasError = false;
+  if(!name){ nameEl.classList.add('error'); document.getElementById('hint-emp-name').classList.add('show'); hasError = true; }
+  if(email && !isValidEmail(email)){ emailEl.classList.add('error'); document.getElementById('hint-emp-email').classList.add('show'); hasError = true; }
+  if(hasError) return;
+  const emps = loadEmployees();
+  if(email){
+    const dup = emps.find(e=>e.email && e.email.toLowerCase()===email.toLowerCase() && e.id!==empEditId);
+    if(dup) return toast('Сотрудник с таким email уже есть','error');
+  }
+  if(empEditId){
+    const idx = emps.findIndex(x=>x.id===empEditId);
+    if(idx>=0){ emps[idx] = {...emps[idx], name, email, dept, grade}; }
+  } else {
+    emps.push({id:uid('emp'), name, email, dept, grade, status:'active', createdAt:new Date().toISOString()});
+  }
+  saveEmployees(emps); closeModal(); renderAdmin();
+  toast(empEditId?'Сотрудник обновлён':'Сотрудник добавлен','success');
+  empEditId = null;
+}
+function editEmployee(id){openEmpModal(id)}
+function deleteEmployee(id){
+  const emps = loadEmployees();
+  const idx = emps.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  confirmDialog('Удалить сотрудника?', '«'+emps[idx].name+'» будет удалён.', 'Удалить', ()=>{
+    emps.splice(idx,1); saveEmployees(emps); renderAdmin(); toast('Сотрудник удалён');
+  });
+}
+function seedEmployees(){
+  const depts = loadDepartments();
+  const firstNames = ['Анна','Мария','Дмитрий','Иван','Ольга','Сергей','Екатерина','Алексей','Наталья','Павел'];
+  const lastNames = ['Иванов','Петров','Смирнов','Кузнецов','Соколов','Попов','Лебедев','Козлов','Новиков','Морозов'];
+  const grades = ['Junior','Middle','Senior','Lead','Head'];
+  const emps = loadEmployees();
+  for(let i=0;i<30;i++){
+    emps.push({
+      id: uid('emp'),
+      name: lastNames[Math.floor(Math.random()*lastNames.length)]+' '+firstNames[Math.floor(Math.random()*firstNames.length)],
+      email: 'user'+(Date.now()%10000+i)+'@company.ru',
+      dept: depts[Math.floor(Math.random()*depts.length)] || '',
+      grade: grades[Math.floor(Math.random()*grades.length)],
+      status: 'active', createdAt: new Date().toISOString()
+    });
+  }
+  saveEmployees(emps); renderAdmin(); toast('Добавлено 30 сотрудников','success');
+}
+function renderEmployeesPanel(){
+  const emps = loadEmployees();
+  const el = document.getElementById('emps-content');
+  if(!emps.length){
+    el.innerHTML = '<div class="empty-state"><div class="ico">'+ico('users',26)+'</div><h3>Нет сотрудников</h3><p>Импортируйте CSV, добавьте вручную или сгенерируйте демо</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button class="btn btn-secondary" onclick="triggerCSVImport()"><span data-ico="fileCsv" data-size="18"></span> Импорт CSV</button><button class="btn btn-secondary" onclick="seedEmployees()"><span data-ico="refresh" data-size="18"></span> Демо</button><button class="btn btn-primary" onclick="openEmpModal()"><span data-ico="userPlus" data-size="18"></span> Добавить</button></div></div>';
+    hydrateIcons(el); return;
+  }
+  let html = '<table class="data-table"><thead><tr><th>ФИО</th><th>Email</th><th>Отдел</th><th>Грейд</th><th>Статус</th><th style="width:120px"></th></tr></thead><tbody>';
+  emps.slice(0,100).forEach(e=>{
+    const status = e.status==='active' ? '<span class="pill ok">Активен</span>' : '<span class="pill">Неактивен</span>';
+    html += '<tr><td><strong>'+escapeHtml(e.name)+'</strong></td>'+
+      '<td style="color:var(--muted);font-size:13px">'+escapeHtml(e.email||'—')+'</td>'+
+      '<td>'+escapeHtml(e.dept||'—')+'</td>'+
+      '<td><span class="pill info">'+escapeHtml(e.grade||'—')+'</span></td>'+
+      '<td>'+status+'</td>'+
+      '<td class="actions">'+
+      '<button class="icon-btn" onclick="editEmployee(\''+e.id+'\')" title="Редактировать">'+ico('edit',16)+'</button>'+
+      '<button class="icon-btn danger" onclick="deleteEmployee(\''+e.id+'\')" title="Удалить">'+ico('trash',16)+'</button>'+
+      '</td></tr>';
+  });
+  html += '</tbody></table>';
+  if(emps.length>100) html += '<p style="margin-top:12px;color:var(--muted);font-size:13px">Показано 100 из '+emps.length+'</p>';
+  el.innerHTML = html; hydrateIcons(el);
+}
+
+function triggerCSVImport(){ document.getElementById('csv-input').click(); }
+function importCSV(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try {
+      const text = String(reader.result).replace(/^\uFEFF/, '');
+      const lines = text.split(/\r?\n/).filter(l=>l.trim());
+      if(lines.length < 2) throw new Error('Мало строк');
+      const header = lines[0];
+      const sep = header.split(';').length >= header.split(',').length ? ';' : ',';
+      const cols = header.split(sep).map(s=>s.trim().toLowerCase());
+      const idxName = cols.findIndex(c=>/фио|имя|name|full/.test(c));
+      const idxEmail = cols.findIndex(c=>/email|почта|mail/.test(c));
+      const idxDept = cols.findIndex(c=>/отдел|департамент|dept/.test(c));
+      const idxGrade = cols.findIndex(c=>/грейд|grade|уровень/.test(c));
+      if(idxName < 0) throw new Error('Не найдена колонка ФИО');
+      const depts = loadDepartments();
+      const emps = loadEmployees();
+      let added = 0, skipped = 0;
+      for(let i=1;i<lines.length;i++){
+        const parts = lines[i].split(sep).map(s=>s.trim().replace(/^"|"$/g,''));
+        const name = (parts[idxName]||'').trim();
+        if(!name){ skipped++; continue; }
+        const email = idxEmail>=0 ? (parts[idxEmail]||'').trim() : '';
+        let dept = idxDept>=0 ? (parts[idxDept]||'').trim() : '';
+        const grade = idxGrade>=0 ? (parts[idxGrade]||'').trim() : 'Middle';
+        if(dept && !depts.includes(dept)) depts.push(dept);
+        if(!dept && depts.length) dept = depts[0];
+        if(email && emps.some(e=>e.email && e.email.toLowerCase()===email.toLowerCase())){ skipped++; continue; }
+        emps.push({id:uid('emp'), name, email, dept, grade, status:'active', createdAt:new Date().toISOString()});
+        added++;
+      }
+      saveDepartments(depts); saveEmployees(emps); renderAdmin();
+      toast('Импортировано: '+added+(skipped?', пропущено: '+skipped:''), added?'success':'error');
+    } catch(err){
+      console.error(err);
+      toast('Ошибка импорта: '+err.message,'error');
+    }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function openSurveyModal(){
+  document.getElementById('sv-name').value = '';
+  const d = new Date(); d.setDate(d.getDate()+30);
+  document.getElementById('sv-close').value = d.toISOString().slice(0,10);
+  document.getElementById('modal-survey').classList.add('show');
+  setTimeout(()=>document.getElementById('sv-name').focus(),100);
+}
+function saveSurvey(){
+  const name = document.getElementById('sv-name').value.trim();
+  const type = document.getElementById('sv-type').value;
+  const closesAt = document.getElementById('sv-close').value;
+  if(!name) return toast('Введите название','error');
+  const arr = loadSurveys();
+  arr.push({id:uid('sv'), name, type, closesAt, status:'active', createdAt:new Date().toISOString()});
+  saveSurveys(arr); closeModal(); renderAdmin(); toast('Опрос создан','success');
+}
+function closeSurvey(id){
+  const arr = loadSurveys();
+  const s = arr.find(x=>x.id===id); if(!s) return;
+  confirmDialog('Закрыть опрос?', '«'+s.name+'» перестанет быть активным.', 'Закрыть', ()=>{
+    s.status = 'closed'; saveSurveys(arr); renderAdmin(); toast('Опрос закрыт');
+  });
+}
+function reopenSurvey(id){
+  const arr = loadSurveys();
+  const s = arr.find(x=>x.id===id); if(!s) return;
+  s.status = 'active'; saveSurveys(arr); renderAdmin(); toast('Опрос открыт','success');
+}
+function deleteSurvey(id){
+  const arr = loadSurveys();
+  const idx = arr.findIndex(x=>x.id===id); if(idx<0) return;
+  confirmDialog('Удалить опрос?', '«'+arr[idx].name+'» будет удалён навсегда.', 'Удалить', ()=>{
+    arr.splice(idx,1); saveSurveys(arr); renderAdmin(); toast('Опрос удалён');
+  });
+}
+function seedResponses(){
+  const depts = loadDepartments();
+  const arr = loadResponses();
+  for(let i=0;i<60;i++){
+    const dept = depts[Math.floor(Math.random()*depts.length)] || '';
+    const em={}, lm={}, sm={};
+    ['Руководитель','Стратегия','Признание','Обратная связь','Процессы','Изменения','Коллеги','Баланс','Карьера','Условия и оплата'].forEach(k=>em[k]=clamp(3.5+(Math.random()-0.5)*1.2,1,5));
+    ['Гордится компанией','Рекомендует компанию','Остается сейчас','Остается в будущем'].forEach(k=>lm[k]=clamp(3.6+(Math.random()-0.5)*1.1,1,5));
+    ['Интерес','Условия труда','Льготы','Оплата','Безопасность'].forEach(k=>sm[k]=clamp(3.6+(Math.random()-0.5)*1.2,1,5));
+    arr.push({
+      id: uid('seed'), date: new Date(Date.now()-Math.random()*90*86400000).toISOString(),
+      name:'', dept,
+      engagementIndex: round2(avg(Object.values(em))),
+      loyaltyIndex: round2(avg(Object.values(lm))),
+      satisfactionIndex: round2(avg(Object.values(sm))),
+      enps: Math.round(clamp(7+(Math.random()-0.5)*4,0,10)),
+      engagementMetrics: Object.entries(em).map(([name,score])=>({name,score:round2(score),icon:ICON_BY_METRIC[name]})),
+      loyaltyMetrics: Object.entries(lm).map(([name,score])=>({name,score:round2(score),icon:ICON_BY_METRIC[name]})),
+      satisfactionMetrics: Object.entries(sm).map(([name,score])=>({name,score:round2(score),icon:ICON_BY_METRIC[name]}))
+    });
+  }
+  saveResponses(arr); renderAdmin(); toast('Добавлено 60 ответов','success');
+}
+function renderSurveysPanel(){
+  const surveys = loadSurveys();
+  const resp = loadResponses();
+  const el = document.getElementById('surveys-content');
+  let html = '';
+  if(!surveys.length){
+    html += '<div class="empty-state" style="margin-bottom:16px"><div class="ico">'+ico('clipboard',26)+'</div><h3>Нет опросов</h3><p>Создайте первый опрос или сгенерируйте ответы</p><div style="display:flex;gap:10px;justify-content:center"><button class="btn btn-secondary" onclick="seedResponses()"><span data-ico="refresh" data-size="18"></span> Сгенерировать ответы</button><button class="btn btn-primary" onclick="openSurveyModal()"><span data-ico="plus" data-size="18"></span> Создать</button></div></div>';
+  } else {
+    html += '<table class="data-table"><thead><tr><th>Название</th><th>Тип</th><th>Статус</th><th>Создан</th><th>Закрывается</th><th style="width:140px"></th></tr></thead><tbody>';
+    surveys.forEach(s=>{
+      const statusPill = s.status==='active'?'<span class="pill ok">Активен</span>':s.status==='closed'?'<span class="pill">Закрыт</span>':'<span class="pill warn">Черновик</span>';
+      html += '<tr><td><strong>'+escapeHtml(s.name)+'</strong></td>'+
+        '<td>'+(s.type==='pulse'?'Пульс':'Полный')+'</td>'+
+        '<td>'+statusPill+'</td>'+
+        '<td>'+fmtDate(s.createdAt)+'</td>'+
+        '<td>'+fmtDate(s.closesAt)+'</td>'+
+        '<td class="actions">'+
+        (s.status==='active'
+          ? '<button class="icon-btn" onclick="closeSurvey(\''+s.id+'\')" title="Закрыть">'+ico('lock',16)+'</button>'
+          : '<button class="icon-btn" onclick="reopenSurvey(\''+s.id+'\')" title="Открыть">'+ico('play',16)+'</button>')+
+        '<button class="icon-btn danger" onclick="deleteSurvey(\''+s.id+'\')" title="Удалить">'+ico('trash',16)+'</button>'+
+        '</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '<div style="margin-top:24px"><span style="font-size:13px;color:var(--muted)">Всего ответов: <b>'+resp.length+'</b></span></div>';
+  el.innerHTML = html; hydrateIcons(el);
+}
+
+function renderSettingsPanel(){
+  const c = loadCompany();
+  const n = document.getElementById('set-company');
+  const ind = document.getElementById('set-industry');
+  const f = document.getElementById('set-frequency');
+  if(n) n.value = c.name||'';
+  if(ind) ind.value = c.industry||'IT / Разработка ПО';
+  if(f) f.value = c.frequency||'Ежеквартально';
+}
+function saveSettings(){
+  const c = {
+    name: document.getElementById('set-company').value.trim(),
+    industry: document.getElementById('set-industry').value,
+    frequency: document.getElementById('set-frequency').value
+  };
+  saveCompany(c); toast('Настройки сохранены','success');
+}
+function resetAllData(){
+  confirmDialog('Сбросить все данные?',
+    'Все ответы, сотрудники, отделы и опросы будут удалены без возможности восстановления.',
+    'Сбросить', ()=>{
+      ALL_KEYS.forEach(k=>localStorage.removeItem(LS[k]));
+      localStorage.removeItem(LS.DRAFT);
+      toast('Все данные удалены');
+      setTimeout(()=>location.reload(), 700);
+    });
+}
+
+document.addEventListener('keydown', e=>{
+  if(!document.getElementById('survey').classList.contains('active')) return;
+  if(e.key>='1'&&e.key<='5'){
+    const btns = document.querySelectorAll('.likert-option');
+    if(btns[+e.key-1]) btns[+e.key-1].click();
+  }
+  if(e.key==='Enter' && !document.getElementById('btn-next').disabled){
+    document.getElementById('btn-next').click();
+  }
+});
+window.addEventListener('beforeunload', ()=>{ if(state.mode && state.answers && Object.keys(state.answers).length) saveDraft(); });
+
+(function init(){
+  hydrateIcons();
+  loadDepartments();
+  if(loadResponses().length===0) seedResponses();
+  if(loadEmployees().length===0) seedEmployees();
+  renderDraftBanner();
+})();
+</script>
+</body>
+</html>

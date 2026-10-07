@@ -1,0 +1,16 @@
+{
+  "name": "smartjob",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w @smartjob/api",
+    "dev:web": "npm run dev -w @smartjob/web",
+    "build": "npm run build -w @smartjob/api && npm run build -w @smartjob/web",
+    "prisma:generate": "npm run prisma:generate -w @smartjob/api",
+    "prisma:migrate": "npm run prisma:migrate -w @smartjob/api",
+    "seed": "npm run seed -w @smartjob/api"
+  }
+}

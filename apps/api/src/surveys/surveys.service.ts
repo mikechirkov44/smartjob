@@ -1,0 +1,337 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import {
+  LinkType,
+  QuestionType,
+  SurveyStatus,
+  SurveyTemplate,
+} from '@prisma/client';
+import { randomBytes } from 'crypto';
+import * as QRCode from 'qrcode';
+import { PrismaService } from '../prisma/prisma.service';
+import {
+  CreatePersonalLinksDto,
+  CreateSurveyDto,
+  UpdateSurveyDto,
+} from './surveys.dto';
+import {
+  ENPS_QUESTION,
+  FULL_TEMPLATE,
+  PULSE_TEMPLATE,
+  TemplateQuestion,
+} from './templates';
+
+@Injectable()
+export class SurveysService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
+
+  private publicBaseUrl() {
+    return this.config.get<string>('PUBLIC_WEB_URL', 'http://localhost:5173');
+  }
+
+  private makeToken() {
+    return randomBytes(16).toString('hex');
+  }
+
+  private resolveTemplateQuestions(
+    template: SurveyTemplate,
+    includeEnps: boolean,
+    custom?: CreateSurveyDto['questions'],
+  ): TemplateQuestion[] {
+    if (template === SurveyTemplate.CUSTOM) {
+      if (!custom?.length) {
+        throw new BadRequestException(
+          'Для своего опроса нужны вопросы',
+        );
+      }
+      const questions: TemplateQuestion[] = custom.map((q) => ({
+        text: q.text,
+        metric: q.metric || 'Общее',
+        category: q.category || 'custom',
+        type: q.type === QuestionType.ENPS ? 'ENPS' : 'LIKERT',
+      }));
+      if (includeEnps && !questions.some((q) => q.type === 'ENPS')) {
+        questions.push(ENPS_QUESTION);
+      }
+      return questions;
+    }
+
+    const base =
+      template === SurveyTemplate.PULSE ? PULSE_TEMPLATE : FULL_TEMPLATE;
+    const questions = [...base];
+    if (includeEnps) {
+      questions.push(ENPS_QUESTION);
+    }
+    return questions;
+  }
+
+  list(organizationId: string) {
+    return this.prisma.survey.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { responses: true, links: true, questions: true } },
+        links: {
+          where: { type: LinkType.PUBLIC },
+          take: 1,
+        },
+      },
+    });
+  }
+
+  async getOne(organizationId: string, id: string) {
+    const survey = await this.prisma.survey.findFirst({
+      where: { id, organizationId },
+      include: {
+        questions: { orderBy: { sortOrder: 'asc' } },
+        links: {
+          include: {
+            employee: { select: { id: true, fullName: true, email: true } },
+            _count: { select: { responses: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        _count: { select: { responses: true } },
+      },
+    });
+    if (!survey) {
+      throw new NotFoundException('Опрос не найден');
+    }
+    return survey;
+  }
+
+  async create(organizationId: string, dto: CreateSurveyDto) {
+    const includeEnps = dto.includeEnps ?? true;
+    const questions = this.resolveTemplateQuestions(
+      dto.template,
+      includeEnps,
+      dto.questions,
+    );
+
+    const survey = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.survey.create({
+        data: {
+          organizationId,
+          title: dto.title.trim(),
+          description: dto.description,
+          coverImage: dto.coverImage || 'team-collab',
+          template: dto.template,
+          includeEnps,
+          adminCanIdentifyRespondents: dto.adminCanIdentifyRespondents ?? false,
+          closesAt: dto.closesAt ? new Date(dto.closesAt) : null,
+          status: SurveyStatus.DRAFT,
+          questions: {
+            create: questions.map((q, index) => ({
+              sortOrder: index,
+              text: q.text,
+              metric: q.metric,
+              category: q.category,
+              type: q.type === 'ENPS' ? QuestionType.ENPS : QuestionType.LIKERT,
+            })),
+          },
+        },
+      });
+
+      await tx.surveyLink.create({
+        data: {
+          surveyId: created.id,
+          token: this.makeToken(),
+          type: LinkType.PUBLIC,
+        },
+      });
+
+      return created;
+    });
+
+    return this.getOne(organizationId, survey.id);
+  }
+
+  async update(organizationId: string, id: string, dto: UpdateSurveyDto) {
+    const survey = await this.getOne(organizationId, id);
+
+    if (dto.questions && survey.status !== SurveyStatus.DRAFT) {
+      throw new BadRequestException(
+        'Редактировать вопросы можно только в черновике',
+      );
+    }
+
+    if (dto.status === SurveyStatus.ACTIVE) {
+      if (survey.closesAt && survey.closesAt < new Date()) {
+        throw new BadRequestException('Дата закрытия уже прошла');
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.survey.update({
+        where: { id },
+        data: {
+          title: dto.title?.trim(),
+          description: dto.description,
+          coverImage: dto.coverImage,
+          status: dto.status,
+          includeEnps: dto.includeEnps,
+          adminCanIdentifyRespondents: dto.adminCanIdentifyRespondents,
+          closesAt:
+            dto.closesAt === null
+              ? null
+              : dto.closesAt
+                ? new Date(dto.closesAt)
+                : undefined,
+        },
+      });
+
+      if (dto.questions) {
+        await tx.answer.deleteMany({
+          where: { question: { surveyId: id } },
+        });
+        await tx.surveyQuestion.deleteMany({ where: { surveyId: id } });
+        const includeEnps = dto.includeEnps ?? survey.includeEnps;
+        const questions = this.resolveTemplateQuestions(
+          SurveyTemplate.CUSTOM,
+          includeEnps,
+          dto.questions,
+        );
+        await tx.surveyQuestion.createMany({
+          data: questions.map((q, index) => ({
+            surveyId: id,
+            sortOrder: index,
+            text: q.text,
+            metric: q.metric,
+            category: q.category,
+            type: q.type === 'ENPS' ? QuestionType.ENPS : QuestionType.LIKERT,
+          })),
+        });
+      }
+    });
+
+    return this.getOne(organizationId, id);
+  }
+
+  async remove(organizationId: string, id: string) {
+    await this.getOne(organizationId, id);
+    await this.prisma.survey.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  async ensurePublicLink(organizationId: string, surveyId: string) {
+    await this.getOne(organizationId, surveyId);
+    let link = await this.prisma.surveyLink.findFirst({
+      where: { surveyId, type: LinkType.PUBLIC },
+    });
+    if (!link) {
+      link = await this.prisma.surveyLink.create({
+        data: {
+          surveyId,
+          token: this.makeToken(),
+          type: LinkType.PUBLIC,
+        },
+      });
+    }
+    return this.formatLink(link.token);
+  }
+
+  async createPersonalLinks(
+    organizationId: string,
+    surveyId: string,
+    dto: CreatePersonalLinksDto,
+  ) {
+    await this.getOne(organizationId, surveyId);
+    const employees = await this.prisma.employee.findMany({
+      where: {
+        organizationId,
+        id: { in: dto.employeeIds },
+        isActive: true,
+      },
+    });
+
+    const results = [];
+    for (const emp of employees) {
+      const existing = await this.prisma.surveyLink.findFirst({
+        where: {
+          surveyId,
+          employeeId: emp.id,
+          type: LinkType.PERSONAL,
+        },
+      });
+      const link =
+        existing ||
+        (await this.prisma.surveyLink.create({
+          data: {
+            surveyId,
+            employeeId: emp.id,
+            token: this.makeToken(),
+            type: LinkType.PERSONAL,
+          },
+        }));
+      results.push({
+        employeeId: emp.id,
+        fullName: emp.fullName,
+        ...this.formatLink(link.token),
+      });
+    }
+    return results;
+  }
+
+  async qrCode(organizationId: string, surveyId: string, token?: string) {
+    const survey = await this.getOne(organizationId, surveyId);
+    let linkToken = token;
+    if (!linkToken) {
+      const publicLink = survey.links.find((l) => l.type === LinkType.PUBLIC);
+      if (!publicLink) {
+        throw new NotFoundException('Публичная ссылка не найдена');
+      }
+      linkToken = publicLink.token;
+    }
+    const url = `${this.publicBaseUrl()}/s/${linkToken}`;
+    const dataUrl = await QRCode.toDataURL(url, {
+      width: 512,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+    });
+    return { url, qrDataUrl: dataUrl };
+  }
+
+  private formatLink(token: string) {
+    const url = `${this.publicBaseUrl()}/s/${token}`;
+    return { token, url };
+  }
+
+  async listResponses(organizationId: string, surveyId: string) {
+    const survey = await this.getOne(organizationId, surveyId);
+    const responses = await this.prisma.response.findMany({
+      where: { surveyId },
+      orderBy: { completedAt: 'desc' },
+      include: {
+        answers: true,
+        employee: {
+          select: { id: true, fullName: true, email: true },
+        },
+        link: { select: { type: true } },
+      },
+    });
+
+    return responses.map((r) => {
+      const canIdentify =
+        survey.adminCanIdentifyRespondents && r.link.type === LinkType.PERSONAL;
+      return {
+        id: r.id,
+        completedAt: r.completedAt,
+        departmentName: r.departmentName,
+        grade: r.grade,
+        enps: r.enps,
+        answersCount: r.answers.length,
+        employee: canIdentify
+          ? r.employee
+          : null,
+        anonymous: !canIdentify,
+      };
+    });
+  }
+}

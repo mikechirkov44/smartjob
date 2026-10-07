@@ -1,0 +1,285 @@
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
+import { api, ApiError } from '../api';
+import { useAuth } from '../auth';
+import { coverSrc } from '../coverPresets';
+
+type Survey = {
+  id: string;
+  title: string;
+  description?: string;
+  coverImage?: string;
+  template: string;
+  status: string;
+  includeEnps: boolean;
+  adminCanIdentifyRespondents: boolean;
+  closesAt?: string;
+  questions: Array<{ id: string; text: string; metric?: string; type: string }>;
+  links: Array<{
+    id: string;
+    token: string;
+    type: string;
+    employee?: { id: string; fullName: string } | null;
+    _count: { responses: number };
+  }>;
+  _count: { responses: number };
+};
+
+type Emp = { id: string; fullName: string; isActive: boolean };
+type Resp = {
+  id: string;
+  completedAt: string;
+  departmentName?: string;
+  enps?: number;
+  anonymous: boolean;
+  employee?: { fullName: string; email?: string } | null;
+};
+
+export function SurveyDetailPage() {
+  const { id } = useParams();
+  const { token, organizationId } = useAuth();
+  const [survey, setSurvey] = useState<Survey | null>(null);
+  const [employees, setEmployees] = useState<Emp[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [responses, setResponses] = useState<Resp[]>([]);
+  const [publicUrl, setPublicUrl] = useState('');
+  const [error, setError] = useState('');
+
+  const load = async () => {
+    if (!organizationId || !id) return;
+    const [s, emps, resps, link] = await Promise.all([
+      api<Survey>(`/organizations/${organizationId}/surveys/${id}`, {
+        token,
+        organizationId,
+      }),
+      api<Emp[]>(`/organizations/${organizationId}/employees`, {
+        token,
+        organizationId,
+      }),
+      api<Resp[]>(`/organizations/${organizationId}/surveys/${id}/responses`, {
+        token,
+        organizationId,
+      }),
+      api<{ url: string }>(
+        `/organizations/${organizationId}/surveys/${id}/public-link`,
+        { token, organizationId, method: 'POST' },
+      ),
+    ]);
+    setSurvey(s);
+    setEmployees(emps.filter((e) => e.isActive));
+    setResponses(resps);
+    setPublicUrl(link.url);
+  };
+
+  useEffect(() => {
+    void load().catch((e) => setError(e instanceof ApiError ? e.message : 'Ошибка'));
+  }, [token, organizationId, id]);
+
+  const setStatus = async (status: string) => {
+    await api(`/organizations/${organizationId}/surveys/${id}`, {
+      token,
+      organizationId,
+      method: 'PATCH',
+      body: { status },
+    });
+    await load();
+  };
+
+  const toggleIdentify = async () => {
+    if (!survey) return;
+    await api(`/organizations/${organizationId}/surveys/${id}`, {
+      token,
+      organizationId,
+      method: 'PATCH',
+      body: { adminCanIdentifyRespondents: !survey.adminCanIdentifyRespondents },
+    });
+    await load();
+  };
+
+  const createPersonal = async () => {
+    await api(`/organizations/${organizationId}/surveys/${id}/personal-links`, {
+      token,
+      organizationId,
+      method: 'POST',
+      body: { employeeIds: selected },
+    });
+    setSelected([]);
+    await load();
+  };
+
+  if (!survey) {
+    return <div className="card">{error || 'Загрузка…'}</div>;
+  }
+
+  const personalLinks = survey.links.filter((l) => l.type === 'PERSONAL');
+
+  return (
+    <div className="stack">
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <div>
+          <Link to="/surveys" className="muted">
+            ← К опросам
+          </Link>
+          <h1 className="page-title">{survey.title}</h1>
+          <p className="page-sub">
+            {survey.template} · ответов: {survey._count.responses}
+          </p>
+          <img
+            src={coverSrc(survey.coverImage)}
+            alt=""
+            style={{
+              width: 'min(360px, 100%)',
+              borderRadius: 14,
+              marginTop: 8,
+              border: '1px solid var(--border)',
+            }}
+          />
+        </div>
+        <div className="row">
+          {survey.status !== 'ACTIVE' && (
+            <button className="btn btn-primary" onClick={() => void setStatus('ACTIVE')}>
+              Открыть
+            </button>
+          )}
+          {survey.status === 'ACTIVE' && (
+            <button className="btn btn-secondary" onClick={() => void setStatus('CLOSED')}>
+              Закрыть
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="grid-2">
+        <div className="card stack">
+          <h3>Публичная ссылка и QR</h3>
+          <p className="muted">Общая ссылка — ответы без личности даже для админа.</p>
+          <input readOnly value={publicUrl} onFocus={(e) => e.target.select()} />
+          <div className="row">
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => void navigator.clipboard.writeText(publicUrl)}
+            >
+              Копировать
+            </button>
+            <a className="btn btn-primary btn-sm" href={publicUrl} target="_blank" rel="noreferrer">
+              Открыть
+            </a>
+          </div>
+          {publicUrl && (
+            <div style={{ background: '#fff', padding: 16, width: 'fit-content', borderRadius: 12 }}>
+              <QRCodeSVG value={publicUrl} size={180} />
+            </div>
+          )}
+        </div>
+
+        <div className="card stack">
+          <h3>Настройки анонимности</h3>
+          <label className="row">
+            <input
+              type="checkbox"
+              checked={survey.adminCanIdentifyRespondents}
+              onChange={() => void toggleIdentify()}
+            />
+            Админ видит личность по персональным ссылкам
+          </label>
+          <p className="muted">
+            Для сотрудника опрос всегда выглядит анонимным. Идентификация возможна только
+            при персональных ссылках и включённой опции.
+          </p>
+          <h4>Персональные ссылки</h4>
+          <div className="stack" style={{ maxHeight: 180, overflow: 'auto' }}>
+            {employees.map((e) => (
+              <label key={e.id} className="row">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(e.id)}
+                  onChange={(ev) =>
+                    setSelected((list) =>
+                      ev.target.checked
+                        ? [...list, e.id]
+                        : list.filter((id) => id !== e.id),
+                    )
+                  }
+                />
+                {e.fullName}
+              </label>
+            ))}
+          </div>
+          <button
+            className="btn btn-secondary"
+            disabled={!selected.length}
+            onClick={() => void createPersonal()}
+          >
+            Создать ссылки
+          </button>
+          {personalLinks.length > 0 && (
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Сотрудник</th>
+                    <th>Ссылка</th>
+                    <th>Ответил</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {personalLinks.map((l) => (
+                    <tr key={l.id}>
+                      <td>{l.employee?.fullName || '—'}</td>
+                      <td>
+                        <a href={`/s/${l.token}`} target="_blank" rel="noreferrer">
+                          /s/{l.token.slice(0, 8)}…
+                        </a>
+                      </td>
+                      <td>{l._count.responses > 0 ? 'да' : 'нет'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginBottom: 10 }}>Вопросы ({survey.questions.length})</h3>
+        <ol style={{ paddingLeft: 18 }}>
+          {survey.questions.map((q) => (
+            <li key={q.id} style={{ marginBottom: 8 }}>
+              <strong>{q.metric || q.type}</strong> — {q.text}
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="card table-wrap">
+        <h3 style={{ marginBottom: 10 }}>Ответы</h3>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Отдел</th>
+              <th>eNPS</th>
+              <th>Респондент</th>
+            </tr>
+          </thead>
+          <tbody>
+            {responses.map((r) => (
+              <tr key={r.id}>
+                <td>{new Date(r.completedAt).toLocaleString('ru-RU')}</td>
+                <td>{r.departmentName || '—'}</td>
+                <td>{r.enps ?? '—'}</td>
+                <td>
+                  {r.anonymous
+                    ? 'Анонимно'
+                    : r.employee?.fullName || '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

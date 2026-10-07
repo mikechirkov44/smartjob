@@ -1,0 +1,15 @@
+node_modules
+dist
+build
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage
+.idea
+.vscode
+apps/api/prisma/*.db
+apps/web/dist
+apps/api/dist
+apps/api/title-check.json

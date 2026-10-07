@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartJob Analytics 360</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --primary:#6366f1; --primary-dark:#4f46e5; --primary-light:#eef2ff;
+  --violet:#8b5cf6; --cyan:#06b6d4; --success:#10b981;
+  --warning:#f59e0b; --danger:#ef4444; --pink:#ec4899;
+  --ink:#0f172a; --text:#1e293b; --muted:#64748b; --soft:#94a3b8;
+  --border:#e2e8f0; --bg:#f8fafc; --card:#ffffff;
+  --shadow-sm:0 1px 3px rgba(15,23,42,.06);
+  --shadow:0 4px 20px rgba(15,23,42,.06);
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+select{font-family:inherit}
+svg{display:block;flex-shrink:0}
+.container{max-width:1280px;margin:0 auto;padding:0 24px}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.02em;flex-shrink:0}
+.logo-mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--primary),var(--violet));display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 6px 14px -4px rgba(99,102,241,.5)}
+.logo-mark svg{width:20px;height:20px}
+.nav{display:flex;gap:4px}
+.nav-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);transition:all .15s;text-decoration:none}
+.nav-btn:hover{color:var(--text);background:#f1f5f9}
+.nav-btn.active{color:var(--primary-dark);background:var(--primary-light)}
+@media(max-width:820px){.nav-btn span:not([data-ico]){display:none}.nav-btn{padding:9px 10px}}
+.page-head{padding:32px 0 24px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.page-head h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.page-head p{color:var(--muted);font-size:15px;max-width:720px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:11px;font-size:14px;font-weight:600;transition:all .15s}
+.btn svg{width:16px;height:16px}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--violet));color:#fff;box-shadow:0 6px 16px -4px rgba(99,102,241,.5)}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-secondary{background:#fff;color:var(--text);border:1.5px solid var(--border)}
+.btn-secondary:hover{border-color:var(--primary);color:var(--primary-dark)}
+.tabs{display:flex;gap:6px;padding:6px;background:#fff;border-radius:14px;border:1px solid var(--border);margin-bottom:24px;overflow-x:auto}
+.tab{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--text);background:#f1f5f9}
+.tab.active{color:#fff;background:linear-gradient(135deg,var(--primary),var(--violet));box-shadow:0 6px 14px -4px rgba(99,102,241,.5)}
+.tab svg{width:16px;height:16px}
+.panel{display:none}
+.panel.active{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.filter-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.filter-row label{font-size:13px;font-weight:600;color:var(--muted)}
+.filter-row select{padding:8px 12px;border-radius:10px;border:1.5px solid var(--border);font-size:13px;background:#fff;outline:none}
+.filter-row select:focus{border-color:var(--primary)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+@media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}}
+.kpi{background:#fff;border-radius:var(--radius);padding:22px;border:1px solid var(--border);box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--violet))}
+.kpi.cyan::before{background:linear-gradient(90deg,var(--cyan),#0ea5e9)}
+.kpi.pink::before{background:linear-gradient(90deg,var(--pink),var(--violet))}
+.kpi.amber::before{background:linear-gradient(90deg,var(--warning),var(--pink))}
+.kpi-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.kpi-val{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:6px}
+.card{background:#fff;border-radius:var(--radius);padding:24px;border:1px solid var(--border);box-shadow:var(--shadow-sm);margin-bottom:24px}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.card-head h2{font-size:17px;font-weight:700;display:flex;align-items:center;gap:10px}
+.card-head h2 .ico-wrap{width:32px;height:32px;border-radius:9px;background:var(--primary-light);color:var(--primary-dark);display:flex;align-items:center;justify-content:center}
+.card-head h2 .ico-wrap svg{width:16px;height:16px}
+.card-head p{font-size:13px;color:var(--muted);margin-top:2px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+@media(max-width:1000px){.grid-2{grid-template-columns:1fr}}
+.chart-wrap{position:relative;height:340px}
+.heatmap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+.heatmap table{border-collapse:separate;border-spacing:0;width:100%;min-width:820px;font-size:13px}
+.heatmap th,.heatmap td{padding:12px 14px;text-align:center;border-bottom:1px solid var(--border)}
+.heatmap th{background:#f8fafc;font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.heatmap th:first-child,.heatmap td:first-child{text-align:left;font-weight:600;color:var(--text);background:#f8fafc}
+.heatmap td{font-weight:700;font-variant-numeric:tabular-nums;color:#fff;transition:transform .15s}
+.heatmap td:hover{transform:scale(1.04);position:relative;z-index:2;box-shadow:var(--shadow)}
+.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+table.tbl{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;min-width:640px}
+table.tbl th,table.tbl td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border)}
+table.tbl th{background:#f8fafc;font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+table.tbl td{font-variant-numeric:tabular-nums}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tr:hover td{background:#fafbff}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:100px;font-size:11px;font-weight:700}
+.badge.ok{background:#d1fae5;color:#065f46}
+.badge.warn{background:#fef3c7;color:#92400e}
+.alpha-table{width:100%;font-size:14px;border-collapse:collapse}
+.alpha-table th,.alpha-table td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.alpha-table th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;background:#f8fafc}
+.alpha-table td:last-child{text-align:right;font-weight:700}
+.bench-row{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)}
+.bench-row:last-child{border-bottom:none}
+.bench-name{width:160px;font-size:14px;font-weight:600;flex-shrink:0}
+.bench-track{flex:1;position:relative;height:28px;background:#f1f5f9;border-radius:8px}
+.bench-fill{position:absolute;left:0;top:0;bottom:0;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;color:#fff;font-size:12px;font-weight:700;transition:width .8s ease}
+.bench-mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);border-radius:2px;opacity:.55}
+.bench-mark::after{content:'бенчмарк';position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--ink);white-space:nowrap;font-weight:700}
+.driver-list{display:flex;flex-direction:column;gap:8px}
+.driver-row{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;background:#f8fafc;border:1px solid var(--border);transition:all .15s}
+.driver-row:hover{background:#fff;box-shadow:var(--shadow-sm);transform:translateX(3px)}
+.driver-rank{width:26px;height:26px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--muted);flex-shrink:0}
+.driver-row.top .driver-rank{background:linear-gradient(135deg,var(--primary),var(--violet));color:#fff}
+.driver-name{flex:1;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.driver-name svg{width:16px;height:16px;color:var(--muted)}
+.driver-bar-wrap{width:140px;height:6px;background:#e2e8f0;border-radius:100px;overflow:hidden;flex-shrink:0}
+.driver-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--violet));border-radius:100px}
+.driver-val{width:60px;text-align:right;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;flex-shrink:0}
+.driver-sig{width:54px;text-align:right;font-size:11px;font-weight:700;flex-shrink:0}
+.sig-star{color:var(--danger)}
+.sig-ns{color:var(--soft)}
+.quad-legend{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.quad{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid var(--border)}
+.quad-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.quad-info h4{font-size:13px;font-weight:700;margin-bottom:2px}
+.quad-info p{font-size:11px;color:var(--muted);line-height:1.4}
+.quad-info .count{font-weight:800;color:var(--text)}
+.alert{display:flex;gap:14px;padding:16px 18px;border-radius:12px;border:1px solid var(--border);background:#fff;margin-bottom:10px}
+.alert.warn{background:#fffbeb;border-color:#fde68a}
+.alert.danger{background:#fef2f2;border-color:#fecaca}
+.alert.ok{background:#f0fdf4;border-color:#bbf7d0}
+.alert-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f1f5f9}
+.alert.warn .alert-icon{background:#fef3c7;color:#d97706}
+.alert.danger .alert-icon{background:#fee2e2;color:#dc2626}
+.alert.ok .alert-icon{background:#d1fae5;color:#059669}
+.alert-body h4{font-size:14px;font-weight:700;margin-bottom:3px}
+.alert-body p{font-size:13px;color:var(--muted)}
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+@media(max-width:800px){.stat-strip{grid-template-columns:1fr 1fr}}
+.stat-cell{background:#fff;padding:16px}
+.stat-cell .lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.stat-cell .val{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.stat-cell .hint{font-size:11px;color:var(--soft);margin-top:2px}
+.empty{text-align:center;padding:80px 24px;background:#fff;border-radius:var(--radius);border:1px solid var(--border)}
+.empty-icon{width:64px;height:64px;border-radius:18px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.empty-icon svg{width:32px;height:32px}
+.empty h2{font-size:22px;font-weight:800;margin-bottom:8px}
+.empty p{color:var(--muted);font-size:14px;max-width:420px;margin:0 auto 24px}
+.footer{text-align:center;padding:32px 24px;color:var(--muted);font-size:13px}
+[data-ico]{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<script>
+const P = {
+  logo:'<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>',
+  dashboard:'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  trending:'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  activity:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  barChart:'<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+  layers:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  alertTriangle:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  checkCircle:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  xCircle:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  brain:'<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>',
+  compass:'<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
+  zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+};
+function ico(n,s){s=s||20;return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(P[n]||'')+'</svg>'}
+function hydrateIcons(root){(root||document).querySelectorAll('[data-ico]').forEach(el=>{if(el.dataset.hydrated)return;el.innerHTML=ico(el.dataset.ico,parseInt(el.dataset.size)||20);el.dataset.hydrated='1'})}
+</script>
+
+<div class="topbar">
+  <div class="container topbar-inner">
+    <div class="logo">
+      <div class="logo-mark"><span data-ico="logo" data-size="22"></span></div>
+      <span>SmartJob <span style="color:var(--primary);font-weight:700">Analytics</span></span>
+    </div>
+    <nav class="nav">
+      <a class="nav-btn" href="smartjob.html"><span data-ico="dashboard" data-size="16"></span><span>Опросы</span></a>
+      <a class="nav-btn" href="smartjob.html"><span data-ico="settings" data-size="16"></span><span>Управление</span></a>
+      <a class="nav-btn active" href="#"><span data-ico="brain" data-size="16"></span><span>Аналитика</span></a>
+      <button class="nav-btn" onclick="exportInsights()"><span data-ico="download" data-size="16"></span><span>Экспорт</span></button>
+    </nav>
+  </div>
+</div>
+
+<div class="container">
+  <div class="page-head">
+    <div>
+      <h1>Аналитика</h1>
+      <p>Драйверный анализ, регрессия, матрица приоритетов и динамика — всё на ваших данных</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn btn-secondary" onclick="location.reload()">
+        <span data-ico="refresh" data-size="16"></span> Обновить
+      </button>
+    </div>
+  </div>
+
+  <div id="empty-state" class="empty" style="display:none;margin-bottom:32px">
+    <div class="empty-icon"><span data-ico="brain" data-size="32"></span></div>
+    <h2>Недостаточно данных</h2>
+    <p>Пройдите опрос в основном сервисе или сгенерируйте демо-ответы в разделе «Управление → Опросы».</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-primary" href="smartjob.html"><span data-ico="zap" data-size="16"></span> Перейти к опросам</a>
+      <button class="btn btn-secondary" onclick="seedAndReload()"><span data-ico="refresh" data-size="16"></span> Сгенерировать 60 ответов</button>
+    </div>
+  </div>
+
+  <div id="content" style="display:none">
+    <div class="tabs">
+      <button class="tab active" data-tab="overview" onclick="switchTab('overview')">
+        <span data-ico="dashboard" data-size="16"></span> Обзор
+      </button>
+      <button class="tab" data-tab="drivers" onclick="switchTab('drivers')">
+        <span data-ico="target" data-size="16"></span> Драйверы
+      </button>
+      <button class="tab" data-tab="segments" onclick="switchTab('segments')">
+        <span data-ico="users" data-size="16"></span> Сегменты
+      </button>
+      <button class="tab" data-tab="dynamics" onclick="switchTab('dynamics')">
+        <span data-ico="trending" data-size="16"></span> Динамика
+      </button>
+    </div>
+
+    <div class="panel active" data-panel="overview">
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="stat-strip" id="stat-strip"></div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2><span class="ico-wrap"><span data-ico="grid" data-size="16"></span></span>Тепловая карта: метрики × отделы</h2>
+            <p>Средние баллы вовлечённости по подразделениям</p>
+          </div>
+        </div>
+        <div class="heatmap" id="heatmap"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head"><div><h2><span class="ico-wrap"><span data-ico="activity" data-size="16"></span></span>Надёжность (α Кронбаха)</h2></div></div>
+          <table class="alpha-table" id="alpha-table"></table>
+          <p style="font-size:12px;color:var(--muted);margin-top:12px">α ≥ 0.7 — приемлемо, α ≥ 0.9 — отлично</p>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h2><span class="ico-wrap"><span data-ico="barChart" data-size="16"></span></span>Бенчмаркинг</h2><p>Сравнение с рыночными средними</p></div></div>
+          <div id="benchmarks"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2><span class="ico-wrap"><span data-ico="layers" data-size="16"></span></span>Последние ответы</h2></div></div>
+        <div style="overflow-x:auto" id="responses-list"></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="drivers">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2><span class="ico-wrap"><span data-ico="target" data-size="16"></span></span>Драйверы eNPS</h2>
+              <p>Топ метрик по силе связи с eNPS (корреляция Пирсона)</p>
+            </div>
+          </div>
+          <div class="driver-list" id="driver-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2><span class="ico-wrap"><span data-ico="compass" data-size="16"></span></span>Матрица приоритетов</h2>
+              <p>Ось X — балл, ось Y — важность (β-коэффициент)</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="priorityChart"></canvas></div>
+          <div class="quad-legend" id="quad-legend"></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2><span class="ico-wrap"><span data-ico="grid" data-size="16"></span></span>Корреляционная матрица</h2>
+              <p>Взаимосвязи между метриками вовлечённости</p>
+            </div>
+          </div>
+          <div class="table-wrap" id="corr-matrix"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2><span class="ico-wrap"><span data-ico="brain" data-size="16"></span></span>Регрессионная модель eNPS</h2>
+              <p>Множественная линейная регрессия, OLS</p>
+            </div>
+          </div>
+          <div id="regression-info"></div>
+          <div class="table-wrap" id="regression-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="segments">
+      <div class="filter-row">
+        <label>Отдел:</label>
+        <select id="f-dept" onchange="renderSegmentsTab()"><option value="">Все</option></select>
+        <label>Грейд:</label>
+        <select id="f-grade" onchange="renderSegmentsTab()">
+          <option value="">Все</option>
+          <option>Junior</option><option>Middle</option><option>Senior</option>
+          <option>Lead</option><option>Head</option>
+        </select>
+        <label>Период:</label>
+        <select id="f-period" onchange="renderSegmentsTab()">
+          <option value="all">Всё время</option>
+          <option value="30">30 дней</option>
+          <option value="90">90 дней</option>
+          <option value="180">180 дней</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2><span class="ico-wrap"><span data-ico="users" data-size="16"></span></span>Сравнение отделов</h2>
+            <p>Средние индексы по подразделениям</p>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="segmentChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Детализация</h2></div></div>
+        <div class="table-wrap" id="segment-table"></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="dynamics">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2><span class="ico-wrap"><span data-ico="trending" data-size="16"></span></span>Динамика индексов</h2>
+            <p>Средние значения по неделям</p>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="dynamicsChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2><span class="ico-wrap"><span data-ico="alertTriangle" data-size="16"></span></span>Алерты и наблюдения</h2>
+            <p>Автоматически выявленные аномалии и точки роста</p>
+          </div>
+        </div>
+        <div id="alerts-list"></div>
+      </div>
+    </div>
+
+    <div class="footer">SmartJob Analytics · статистика считается локально на ваших данных</div>
+  </div>
+</div>
+
+<script>
+function pearson(x, y){
+  const n = Math.min(x.length, y.length);
+  if(n < 2) return 0;
+  const mx = x.reduce((a,b)=>a+b,0)/n, my = y.reduce((a,b)=>a+b,0)/n;
+  let num=0, dx=0, dy=0;
+  for(let i=0;i<n;i++){const a=x[i]-mx, b=y[i]-my; num+=a*b; dx+=a*a; dy+=b*b;}
+  return (dx===0||dy===0)?0:num/Math.sqrt(dx*dy);
+}
+function normalCDF(z){return 0.5*(1+erf(z/Math.SQRT2))}
+function erf(x){
+  const s = x<0?-1:1; x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1/(1+p*x);
+  return s*(1 - (((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x));
+}
+function pearsonPValue(r, n){
+  if(n<3) return 1;
+  if(Math.abs(r)>=1) return 0;
+  const t = r*Math.sqrt((n-2)/(1-r*r));
+  return 2*(1 - normalCDF(Math.abs(t)));
+}
+function mean(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
+function variance(a){if(a.length<2)return 0;const m=mean(a);return a.reduce((s,v)=>s+(v-m)*(v-m),0)/(a.length-1)}
+function solveLinear(A, b){
+  const n = A.length;
+  const M = A.map((row,i)=>[...row, b[i]]);
+  for(let col=0; col<n; col++){
+    let maxRow = col;
+    for(let r=col+1; r<n; r++) if(Math.abs(M[r][col])>Math.abs(M[maxRow][col])) maxRow = r;
+    if(Math.abs(M[maxRow][col])<1e-12) return null;
+    [M[col], M[maxRow]] = [M[maxRow], M[col]];
+    for(let r=col+1; r<n; r++){
+      const f = M[r][col]/M[col][col];
+      for(let c=col; c<=n; c++) M[r][c] -= f*M[col][c];
+    }
+  }
+  const x = new Array(n).fill(0);
+  for(let i=n-1; i>=0; i--){
+    let s = M[i][n];
+    for(let j=i+1; j<n; j++) s -= M[i][j]*x[j];
+    x[i] = s/M[i][i];
+  }
+  return x;
+}
+function multipleRegression(X, y){
+  const n = X.length; if(n===0) return null;
+  const k = X[0].length;
+  const Xa = X.map(row=>[1,...row]);
+  const p = k+1;
+  const XtX = Array.from({length:p},()=>new Array(p).fill(0));
+  for(let i=0;i<p;i++) for(let j=0;j<p;j++){
+    let s=0; for(let r=0;r<n;r++) s += Xa[r][i]*Xa[r][j];
+    XtX[i][j]=s;
+  }
+  const Xty = new Array(p).fill(0);
+  for(let i=0;i<p;i++){let s=0; for(let r=0;r<n;r++) s += Xa[r][i]*y[r]; Xty[i]=s;}
+  const beta = solveLinear(XtX, Xty);
+  if(!beta) return null;
+  const yMean = mean(y);
+  let ssRes=0, ssTot=0;
+  const preds = Xa.map(row=>row.reduce((s,v,i)=>s+v*beta[i],0));
+  for(let r=0;r<n;r++){ssRes += Math.pow(y[r]-preds[r],2); ssTot += Math.pow(y[r]-yMean,2);}
+  const rSquared = ssTot>0 ? 1 - ssRes/ssTot : 0;
+  const adjRSquared = 1 - (1-rSquared)*(n-1)/(n-p-1);
+  return {intercept:beta[0], coefficients:beta.slice(1), rSquared, adjRSquared};
+}
+
+const LS = {
+  RESPONSES: 'smartjob_responses_v1',
+  DEPTS: 'smartjob_departments_v1',
+  EMPS: 'smartjob_employees_v1',
+  SURVEYS: 'smartjob_surveys_v1',
+  COMPANY: 'smartjob_company_v1'
+};
+const DEFAULT_DEPTS = ['Продукт','Маркетинг','Продажи','HR','Финансы','IT','Операции'];
+const ICON_BY_METRIC = {
+  'Руководитель':'userCheck','Стратегия':'target','Признание':'award','Обратная связь':'message',
+  'Процессы':'settings','Изменения':'refresh','Коллеги':'users','Баланс':'scale','Карьера':'trending',
+  'Условия и оплата':'briefcase','Гордится компанией':'heart','Рекомендует компанию':'megaphone',
+  'Остается сейчас':'clock','Остается в будущем':'hourglass','Интерес':'sparkles',
+  'Условия труда':'building','Льготы':'gift','Оплата':'wallet','Безопасность':'shield'
+};
+const ENG_METRICS = ['Руководитель','Стратегия','Признание','Обратная связь','Процессы','Изменения','Коллеги','Баланс','Карьера','Условия и оплата'];
+const BENCHMARK = {'Вовлечённость':3.75,'Лояльность':3.68,'Удовлетворённость':3.82,'eNPS':7.5};
+
+function loadResponses(){try{return JSON.parse(localStorage.getItem(LS.RESPONSES))||[]}catch(e){return[]}}
+function saveResponses(a){localStorage.setItem(LS.RESPONSES, JSON.stringify(a))}
+function loadDepartments(){
+  try{const d = JSON.parse(localStorage.getItem(LS.DEPTS)); if(Array.isArray(d)) return d}catch(e){}
+  return DEFAULT_DEPTS.slice();
+}
+
+function seedAndReload(){
+  const depts = loadDepartments();
+  const arr = loadResponses();
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+  function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
+  function round2(v){return Math.round(v*100)/100}
+  for(let i=0;i<60;i++){
+    const dept = depts[Math.floor(Math.random()*depts.length)] || '';
+    const em={}, lm={}, sm={};
+    ENG_METRICS.forEach(k=>em[k]=clamp(3.5+(Math.random()-0.5)*1.2,1,5));
+    ['Гордится компанией','Рекомендует компанию','Остается сейчас','Остается в будущем'].forEach(k=>lm[k]=clamp(3.6+(Math.random()-0.5)*1.1,1,5));
+    ['Интерес','Условия труда','Льготы','Оплата','Безопасность'].forEach(k=>sm[k]=clamp(3.6+(Math.random()-0.5)*1.2,1,5));
+    arr.push({
+      id: 'seed-'+Date.now()+'-'+i,
+      date: new Date(Date.now()-Math.random()*90*86400000).toISOString(),
+      name:'', dept,
+      engagementIndex: round2(avg(Object.values(em))),
+      loyaltyIndex: round2(avg(Object.values(lm))),
+      satisfactionIndex: round2(avg(Object.values(sm))),
+      enps: Math.round(clamp(7+(Math.random()-0.5)*4,0,10)),
+      engagementMetrics: Object.entries(em).map(([name,score])=>({name,score:round2(score)})),
+      loyaltyMetrics: Object.entries(lm).map(([name,score])=>({name,score:round2(score)})),
+      satisfactionMetrics: Object.entries(sm).map(([name,score])=>({name,score:round2(score)}))
+    });
+  }
+  saveResponses(arr); location.reload();
+}
+
+function buildMetricsMap(r){
+  const map = {};
+  [...(r.engagementMetrics||[]), ...(r.loyaltyMetrics||[]), ...(r.satisfactionMetrics||[])].forEach(m=>{map[m.name]=m.score});
+  return map;
+}
+function computeAnalytics(rawData){
+  const data = rawData;
+  const N = data.length;
+  const rows = data.map(r=>({...r, _metrics: buildMetricsMap(r), _enps: r.enps}));
+
+  const driverResults = ENG_METRICS.map(name=>{
+    const xs = rows.map(r=>r._metrics[name]).filter(v=>v!==undefined);
+    const ys = rows.map(r=>r._enps).filter(v=>v!==undefined);
+    const n = Math.min(xs.length, ys.length);
+    if(n < 5) return {name, r:0, p:1, n};
+    const r = pearson(xs.slice(0,n), ys.slice(0,n));
+    return {name, r, p: pearsonPValue(r, n), n};
+  }).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+
+  const validRows = rows.filter(r=>ENG_METRICS.every(m=>r._metrics[m]!==undefined));
+  const reg = validRows.length >= 15
+    ? multipleRegression(validRows.map(r=>ENG_METRICS.map(m=>r._metrics[m])), validRows.map(r=>r._enps))
+    : null;
+  const regCoefs = reg
+    ? ENG_METRICS.map((name,i)=>({name, beta:reg.coefficients[i]})).sort((a,b)=>Math.abs(b.beta)-Math.abs(a.beta))
+    : [];
+
+  const importanceMap = {};
+  regCoefs.forEach(c=>{importanceMap[c.name]=Math.abs(c.beta)});
+  const maxImp = Math.max(...Object.values(importanceMap), 1e-9);
+  const scores = ENG_METRICS.map(name=>{
+    const vals = rows.map(r=>r._metrics[name]).filter(v=>v!==undefined);
+    return {name, score:mean(vals), importance:(importanceMap[name]||0)/maxImp};
+  });
+  const avgScore = mean(scores.map(s=>s.score));
+  const quadrants = {action:[], keep:[], monitor:[], low:[]};
+  scores.forEach(s=>{
+    if(s.importance>=0.5 && s.score<avgScore) quadrants.action.push(s);
+    else if(s.importance>=0.5 && s.score>=avgScore) quadrants.keep.push(s);
+    else if(s.importance<0.5 && s.score<avgScore) quadrants.monitor.push(s);
+    else quadrants.low.push(s);
+  });
+
+  const corrMatrix = ENG_METRICS.map(a=>ENG_METRICS.map(b=>{
+    const xs=[], ys=[];
+    rows.forEach(r=>{
+      if(r._metrics[a]!==undefined && r._metrics[b]!==undefined){xs.push(r._metrics[a]); ys.push(r._metrics[b]);}
+    });
+    return xs.length>=5 ? pearson(xs, ys) : 0;
+  }));
+
+  const weekKey = d=>{
+    const dt = new Date(d);
+    const onejan = new Date(dt.getFullYear(),0,1);
+    const week = Math.ceil((((dt - onejan)/86400000) + onejan.getDay()+1)/7);
+    return dt.getFullYear()+'-W'+String(week).padStart(2,'0');
+  };
+  const weekBuckets = {};
+  rows.forEach(r=>{
+    const k = weekKey(r.date);
+    if(!weekBuckets[k]) weekBuckets[k] = {eng:[],loy:[],sat:[],enps:[]};
+    weekBuckets[k].eng.push(r.engagementIndex);
+    weekBuckets[k].loy.push(r.loyaltyIndex);
+    weekBuckets[k].sat.push(r.satisfactionIndex);
+    weekBuckets[k].enps.push(r.enps);
+  });
+  const weeks = Object.keys(weekBuckets).sort().slice(-12);
+  const dynamics = {
+    labels: weeks,
+    engagement: weeks.map(w=>+mean(weekBuckets[w].eng).toFixed(2)),
+    loyalty: weeks.map(w=>+mean(weekBuckets[w].loy).toFixed(2)),
+    satisfaction: weeks.map(w=>+mean(weekBuckets[w].sat).toFixed(2)),
+    enps: weeks.map(w=>+mean(weekBuckets[w].enps).toFixed(2))
+  };
+
+  const byDept = {};
+  rows.forEach(r=>{
+    if(!r.dept) return;
+    if(!byDept[r.dept]) byDept[r.dept] = {eng:[],loy:[],sat:[],enps:[]};
+    byDept[r.dept].eng.push(r.engagementIndex);
+    byDept[r.dept].loy.push(r.loyaltyIndex);
+    byDept[r.dept].sat.push(r.satisfactionIndex);
+    byDept[r.dept].enps.push(r.enps);
+  });
+  const segments = Object.entries(byDept)
+    .filter(([_,v])=>v.eng.length>=3)
+    .map(([name,v])=>({
+      name, n:v.eng.length,
+      engagement:+mean(v.eng).toFixed(2),
+      loyalty:+mean(v.loy).toFixed(2),
+      satisfaction:+mean(v.sat).toFixed(2),
+      enps:+mean(v.enps).toFixed(2)
+    })).sort((a,b)=>b.engagement-a.engagement);
+
+  const alerts = [];
+  if(weeks.length >= 4){
+    const last2 = weeks.slice(-2), prev2 = weeks.slice(-4, -2);
+    ENG_METRICS.forEach(m=>{
+      const lastVals=[], prevVals=[];
+      rows.forEach(r=>{
+        if(r._metrics[m]!==undefined){
+          const k = weekKey(r.date);
+          if(last2.includes(k)) lastVals.push(r._metrics[m]);
+          else if(prev2.includes(k)) prevVals.push(r._metrics[m]);
+        }
+      });
+      if(lastVals.length>=3 && prevVals.length>=3){
+        const lv=mean(lastVals), pv=mean(prevVals);
+        const delta = (lv-pv)/pv*100;
+        if(delta <= -10) alerts.push({level:'danger', icon:'xCircle', title:'Резкое падение: '+m, text:'Снижение на '+Math.abs(delta).toFixed(0)+'% за 2 недели ('+pv.toFixed(2)+' → '+lv.toFixed(2)+').'});
+        else if(delta <= -5) alerts.push({level:'warn', icon:'alertTriangle', title:'Замедление: '+m, text:'Снижение на '+Math.abs(delta).toFixed(0)+'% за 2 недели.'});
+        else if(delta >= 10) alerts.push({level:'ok', icon:'checkCircle', title:'Рост: '+m, text:'Рост на '+delta.toFixed(0)+'% за 2 недели.'});
+      }
+    });
+  }
+  if(N < 30) alerts.push({level:'warn', icon:'alertTriangle', title:'Малая выборка', text:'n = '+N+'. Для устойчивых выводов нужно ≥ 30 ответов.'});
+  const overallEnps = mean(rows.map(r=>r._enps));
+  if(overallEnps < 6) alerts.push({level:'danger', icon:'xCircle', title:'Низкий средний eNPS', text:'Средний eNPS = '+overallEnps.toFixed(1)+'. Требуется программа удержания.'});
+  if(driverResults[0] && Math.abs(driverResults[0].r) > 0.4){
+    const top = driverResults[0];
+    const topScore = scores.find(s=>s.name===top.name);
+    if(topScore && topScore.score < avgScore){
+      alerts.push({level:'danger', icon:'target', title:'Главный драйвер требует внимания', text:'«'+top.name+'» — сильнее всего связана с eNPS (r = '+top.r.toFixed(2)+'), но балл ниже среднего.'});
+    }
+  }
+
+  let engTrend=0, loyTrend=0, satTrend=0, enpsTrend=0;
+  if(weeks.length >= 2){
+    engTrend = dynamics.engagement.slice(-1)[0] - dynamics.engagement.slice(-2)[0];
+    loyTrend = dynamics.loyalty.slice(-1)[0] - dynamics.loyalty.slice(-2)[0];
+    satTrend = dynamics.satisfaction.slice(-1)[0] - dynamics.satisfaction.slice(-2)[0];
+    enpsTrend = dynamics.enps.slice(-1)[0] - dynamics.enps.slice(-2)[0];
+  }
+
+  return {
+    N,
+    avgEng: mean(rows.map(r=>r.engagementIndex)),
+    avgLoy: mean(rows.map(r=>r.loyaltyIndex)),
+    avgSat: mean(rows.map(r=>r.satisfactionIndex)),
+    avgEnps: overallEnps,
+    promoters: rows.filter(r=>r._enps>=9).length,
+    detractors: rows.filter(r=>r._enps<=6).length,
+    enpsScore: N ? Math.round((rows.filter(r=>r._enps>=9).length - rows.filter(r=>r._enps<=6).length)/N*100) : 0,
+    engTrend, loyTrend, satTrend, enpsTrend,
+    driverResults, reg, regCoefs, scores, avgScore, quadrants,
+    corrMatrix, dynamics, segments, alerts,
+    rows, weeks
+  };
+}
+
+function scoreColor(v){
+  if(v>=4.3)return '#10b981';
+  if(v>=3.7)return '#22c55e';
+  if(v>=3.0)return '#f59e0b';
+  if(v>=2.3)return '#f97316';
+  return '#ef4444';
+}
+function trendHtml(delta){
+  if(Math.abs(delta) < 0.05) return '<span style="color:var(--muted);font-weight:700;font-size:12px">→ 0.00</span>';
+  const arrow = delta > 0 ? '↑' : '↓';
+  const col = delta > 0 ? 'var(--success)' : 'var(--danger)';
+  return '<span style="font-weight:700;font-size:12px;color:'+col+'">'+arrow+' '+Math.abs(delta).toFixed(2)+'</span>';
+}
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===tab));
+}
+
+function renderKPI(a){
+  const cards = [
+    {label:'Средний eNPS', val:a.avgEnps.toFixed(1), trend:a.enpsTrend, cls:'amber', sub:'промоутеров: '+Math.round(a.promoters/a.N*100)+'%'},
+    {label:'Вовлечённость', val:a.avgEng.toFixed(2), trend:a.engTrend, cls:'', sub:'из 5.0'},
+    {label:'Лояльность', val:a.avgLoy.toFixed(2), trend:a.loyTrend, cls:'cyan', sub:'из 5.0'},
+    {label:'Удовлетворённость', val:a.avgSat.toFixed(2), trend:a.satTrend, cls:'pink', sub:'из 5.0'}
+  ];
+  document.getElementById('kpi-grid').innerHTML = cards.map(c=>
+    '<div class="kpi '+c.cls+'"><div class="kpi-label">'+c.label+'</div>'+
+    '<div class="kpi-val">'+c.val+'</div>'+
+    '<div class="kpi-sub">'+trendHtml(c.trend)+' <span style="color:var(--muted)">'+c.sub+'</span></div></div>').join('');
+}
+function renderStatStrip(a){
+  const strip = [
+    {lbl:'Ответов', val:a.N, hint:'в выборке'},
+    {lbl:'Отделов', val:a.segments.length, hint:'с данными'},
+    {lbl:'Значимых драйверов', val:a.driverResults.filter(d=>d.p<0.05).length, hint:'p < 0.05'},
+    {lbl:'R² модели', val:a.reg ? a.reg.rSquared.toFixed(2) : '—', hint:'объяснённая дисперсия'}
+  ];
+  document.getElementById('stat-strip').innerHTML = strip.map(s=>
+    '<div class="stat-cell"><div class="lbl">'+s.lbl+'</div><div class="val">'+s.val+'</div><div class="hint">'+s.hint+'</div></div>').join('');
+}
+function renderHeatmap(a){
+  const depts = [...new Set(a.rows.map(r=>r.dept).filter(Boolean))];
+  let html = '<table><thead><tr><th>Метрика</th>';
+  depts.forEach(d=>html+='<th>'+d+'</th>');
+  html += '<th>Среднее</th></tr></thead><tbody>';
+  ENG_METRICS.forEach(m=>{
+    html += '<tr><td>'+m+'</td>';
+    const rowVals = [];
+    depts.forEach(d=>{
+      const items = a.rows.filter(r=>r.dept===d);
+      const vals = items.map(r=>r._metrics[m]).filter(v=>v!==undefined);
+      const v = vals.length?mean(vals):0;
+      rowVals.push(v);
+      html += '<td style="background:'+scoreColor(v)+'">'+v.toFixed(2)+'</td>';
+    });
+    const rowAvg = mean(rowVals);
+    html += '<td style="background:'+scoreColor(rowAvg)+'">'+rowAvg.toFixed(2)+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('heatmap').innerHTML = html;
+}
+function cronbachAlpha(rows, items){
+  if(rows.length<2) return 0;
+  const k = items.length;
+  const vars = items.map(it=>variance(rows.map(r=>r[it])));
+  const totalVars = variance(rows.map(r=>items.reduce((s,it)=>s+r[it],0)));
+  if(totalVars===0) return 0;
+  return (k/(k-1))*(1 - vars.reduce((a,b)=>a+b,0)/totalVars);
+}
+function renderAlpha(a){
+  const idxDefs = [
+    {name:'Вовлечённость', key:'engagementMetrics', items:ENG_METRICS},
+    {name:'Лояльность', key:'loyaltyMetrics', items:['Гордится компанией','Рекомендует компанию','Остается сейчас','Остается в будущем']},
+    {name:'Удовлетворённость', key:'satisfactionMetrics', items:['Интерес','Условия труда','Льготы','Оплата','Безопасность']}
+  ];
+  let html = '<thead><tr><th>Индекс</th><th>Метрик</th><th>α Кронбаха</th><th>Статус</th></tr></thead><tbody>';
+  idxDefs.forEach(def=>{
+    const scores = a.rows.map(r=>{
+      const arr = r[def.key]||[];
+      const row = {};
+      def.items.forEach(n=>{const m = arr.find(x=>x.name===n); row[n] = m?m.score:null});
+      return row;
+    }).filter(r=>Object.values(r).every(v=>v!==null));
+    const alpha = cronbachAlpha(scores, def.items);
+    const status = alpha>=0.9?'<span class="badge ok">отлично</span>':alpha>=0.7?'<span class="badge ok">приемлемо</span>':'<span class="badge warn">низко</span>';
+    html += '<tr><td>'+def.name+'</td><td>'+def.items.length+'</td><td>'+alpha.toFixed(3)+'</td><td>'+status+'</td></tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('alpha-table').innerHTML = html;
+}
+function renderBenchmarks(a){
+  const rows = [
+    {name:'Вовлечённость', val:a.avgEng, bm:BENCHMARK['Вовлечённость']},
+    {name:'Лояльность', val:a.avgLoy, bm:BENCHMARK['Лояльность']},
+    {name:'Удовлетворённость', val:a.avgSat, bm:BENCHMARK['Удовлетворённость']},
+    {name:'eNPS', val:a.avgEnps/10*5, bm:BENCHMARK['eNPS']/10*5, isEnps:true, raw:a.avgEnps}
+  ];
+  document.getElementById('benchmarks').innerHTML = rows.map(r=>{
+    const pct = Math.min(100, r.val/5*100);
+    const bmPct = Math.min(100, r.bm/5*100);
+    const col = scoreColor(r.val);
+    const label = r.isEnps ? r.raw.toFixed(1) : r.val.toFixed(2);
+    return '<div class="bench-row"><div class="bench-name">'+r.name+'</div>'+
+      '<div class="bench-track"><div class="bench-fill" style="width:'+pct+'%;background:'+col+'">'+label+'</div>'+
+      '<div class="bench-mark" style="left:'+bmPct+'%"></div></div></div>';
+  }).join('');
+}
+function renderResponsesList(a){
+  const rows = a.rows.slice().sort((x,y)=>new Date(y.date)-new Date(x.date)).slice(0,20);
+  if(!rows.length){document.getElementById('responses-list').innerHTML = '<p style="color:var(--muted);font-size:14px;padding:16px 0">Нет ответов.</p>'; return;}
+  let html = '<table class="tbl" style="min-width:600px"><thead><tr><th>Дата</th><th>Отдел</th><th class="num">Вовлеч.</th><th class="num">Лояльн.</th><th class="num">Удовл.</th><th class="num">eNPS</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    html += '<tr><td>'+new Date(r.date).toLocaleDateString('ru-RU')+'</td>'+
+      '<td>'+(r.dept||'—')+'</td>'+
+      '<td class="num" style="color:'+scoreColor(r.engagementIndex)+';font-weight:700">'+r.engagementIndex.toFixed(2)+'</td>'+
+      '<td class="num" style="color:'+scoreColor(r.loyaltyIndex)+';font-weight:700">'+r.loyaltyIndex.toFixed(2)+'</td>'+
+      '<td class="num" style="color:'+scoreColor(r.satisfactionIndex)+';font-weight:700">'+r.satisfactionIndex.toFixed(2)+'</td>'+
+      '<td class="num" style="font-weight:700">'+r.enps+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('responses-list').innerHTML = html;
+}
+function renderDrivers(a){
+  const maxR = Math.max(...a.driverResults.map(d=>Math.abs(d.r)), 0.01);
+  document.getElementById('driver-list').innerHTML = a.driverResults.map((d,i)=>{
+    const pct = Math.abs(d.r)/maxR*100;
+    const sigClass = d.p < 0.05 ? 'sig-star' : 'sig-ns';
+    const sigMark = d.p < 0.01 ? '***' : d.p < 0.05 ? '**' : d.p < 0.1 ? '*' : 'ns';
+    return '<div class="driver-row'+(i<3?' top':'')+'">'+
+      '<div class="driver-rank">'+(i+1)+'</div>'+
+      '<div class="driver-name">'+d.name+'</div>'+
+      '<div class="driver-bar-wrap"><div class="driver-bar" style="width:'+pct+'%"></div></div>'+
+      '<div class="driver-val">'+(d.r>0?'+':'')+d.r.toFixed(3)+'</div>'+
+      '<div class="driver-sig '+sigClass+'">'+sigMark+'</div></div>';
+  }).join('');
+}
+function renderPriorityMatrix(a){
+  if(a._priorityChart) a._priorityChart.destroy();
+  const ctx = document.getElementById('priorityChart').getContext('2d');
+  const pointColors = a.scores.map(s=>{
+    if(a.quadrants.action.includes(s)) return '#ef4444';
+    if(a.quadrants.keep.includes(s)) return '#10b981';
+    if(a.quadrants.monitor.includes(s)) return '#f59e0b';
+    return '#94a3b8';
+  });
+  const customPlugin = {
+    id:'priorityBg',
+    beforeDraw(chart){
+      const {ctx, chartArea, scales} = chart;
+      if(!chartArea) return;
+      const xMid = scales.x.getPixelForValue(a.avgScore);
+      const yMid = scales.y.getPixelForValue(0.5);
+      ctx.save();
+      ctx.fillStyle = 'rgba(239,68,68,0.05)'; ctx.fillRect(chartArea.left, chartArea.top, xMid-chartArea.left, yMid-chartArea.top);
+      ctx.fillStyle = 'rgba(16,185,129,0.05)'; ctx.fillRect(xMid, chartArea.top, chartArea.right-xMid, yMid-chartArea.top);
+      ctx.fillStyle = 'rgba(245,158,11,0.05)'; ctx.fillRect(chartArea.left, yMid, xMid-chartArea.left, chartArea.bottom-yMid);
+      ctx.fillStyle = 'rgba(148,163,184,0.05)'; ctx.fillRect(xMid, yMid, chartArea.right-xMid, chartArea.bottom-yMid);
+      ctx.restore();
+    }
+  };
+  a._priorityChart = new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[{
+      data:a.scores.map(s=>({x:s.score, y:s.importance, name:s.name})),
+      backgroundColor:pointColors, borderColor:pointColors, borderWidth:2, pointRadius:9, pointHoverRadius:12
+    }]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>c.raw.name+': балл '+c.raw.x.toFixed(2)+', важность '+c.raw.y.toFixed(2)}}},
+      scales:{
+        x:{min:1, max:5, title:{display:true, text:'Балл →', color:'#64748b', font:{size:11,weight:'600'}}, grid:{color:'#e2e8f0'}, ticks:{color:'#64748b',font:{size:11}}},
+        y:{min:0, max:1, title:{display:true, text:'Важность →', color:'#64748b', font:{size:11,weight:'600'}}, grid:{color:'#e2e8f0'}, ticks:{color:'#64748b',font:{size:11}}}
+      }},
+    plugins:[customPlugin]
+  });
+  const q = a.quadrants;
+  document.getElementById('quad-legend').innerHTML = [
+    {c:'#ef4444', title:'Действовать', desc:'Важно, но слабо. Приоритет №1', arr:q.action},
+    {c:'#10b981', title:'Удерживать', desc:'Важно и сильно', arr:q.keep},
+    {c:'#f59e0b', title:'Мониторить', desc:'Не критично, следить', arr:q.monitor},
+    {c:'#94a3b8', title:'Не приоритет', desc:'Низкая важность', arr:q.low}
+  ].map(x=>'<div class="quad"><div class="quad-dot" style="background:'+x.c+'"></div><div class="quad-info"><h4>'+x.title+' <span class="count">('+x.arr.length+')</span></h4><p>'+x.desc+'</p></div></div>').join('');
+}
+function renderCorrMatrix(a){
+  const short = {'Руководитель':'Рук','Стратегия':'Стр','Признание':'Призн','Обратная связь':'ОС','Процессы':'Проц','Изменения':'Изм','Коллеги':'Колл','Баланс':'Бал','Карьера':'Кар','Условия и оплата':'Усл'};
+  let html = '<table class="tbl"><thead><tr><th></th>';
+  ENG_METRICS.forEach(x=>html+='<th style="text-align:center;font-size:10px">'+short[x]+'</th>');
+  html += '</tr></thead><tbody>';
+  ENG_METRICS.forEach((row,i)=>{
+    html += '<tr><td style="font-weight:700;font-size:12px">'+short[row]+'</td>';
+    a.corrMatrix[i].forEach((v,j)=>{
+      const intensity = Math.abs(v);
+      const bg = i===j ? '#e2e8f0' : v>0 ? 'rgba(99,102,241,'+(intensity*0.85).toFixed(2)+')' : 'rgba(239,68,68,'+(intensity*0.85).toFixed(2)+')';
+      const col = intensity > 0.35 && i!==j ? '#fff' : (i===j ? '#94a3b8' : '#0f172a');
+      html += '<td style="text-align:center;background:'+bg+';color:'+col+';font-size:11px;font-weight:700">'+(i===j ? '—' : v.toFixed(2))+'</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('corr-matrix').innerHTML = html;
+}
+function renderRegression(a){
+  if(!a.reg){
+    document.getElementById('regression-info').innerHTML = '<p style="color:var(--muted);font-size:14px;padding:12px 0">Недостаточно данных (нужно ≥ 15 полных ответов).</p>';
+    document.getElementById('regression-table').innerHTML = '';
+    return;
+  }
+  const r2 = a.reg.rSquared;
+  const q = r2 > 0.7 ? 'сильная' : r2 > 0.4 ? 'умеренная' : 'слабая';
+  const color = r2 > 0.6 ? '#10b981' : r2 > 0.35 ? '#f59e0b' : '#ef4444';
+  document.getElementById('regression-info').innerHTML =
+    '<div style="display:flex;gap:20px;flex-wrap:wrap;padding:12px 0 16px">'+
+      '<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">R²</div>'+
+      '<div style="font-size:26px;font-weight:800;color:'+color+'">'+r2.toFixed(3)+'</div></div>'+
+      '<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Adj. R²</div>'+
+      '<div style="font-size:26px;font-weight:800">'+a.reg.adjRSquared.toFixed(3)+'</div></div>'+
+      '<div><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Сила</div>'+
+      '<div style="font-size:14px;font-weight:600;color:'+color+'">'+q+'</div></div></div>'+
+    '<p style="font-size:12px;color:var(--muted);margin-bottom:14px">Модель объясняет <b>'+(r2*100).toFixed(1)+'%</b> вариации eNPS.</p>';
+  const maxBeta = Math.max(...a.regCoefs.map(c=>Math.abs(c.beta)), 0.001);
+  let html = '<table class="tbl"><thead><tr><th>Метрика</th><th class="num">β</th><th>Влияние</th></tr></thead><tbody>';
+  a.regCoefs.forEach(c=>{
+    const pct = Math.abs(c.beta)/maxBeta*100;
+    const col = c.beta > 0 ? '#10b981' : '#ef4444';
+    html += '<tr><td style="font-weight:600;font-size:12px">'+c.name+'</td><td class="num" style="font-weight:700;color:'+col+'">'+(c.beta>0?'+':'')+c.beta.toFixed(3)+'</td><td><div style="width:'+pct+'%;height:6px;background:'+col+';border-radius:100px;min-width:4px"></div></td></tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('regression-table').innerHTML = html;
+}
+function renderDynamicsChart(a){
+  if(a._dynamicsChart) a._dynamicsChart.destroy();
+  const ctx = document.getElementById('dynamicsChart').getContext('2d');
+  a._dynamicsChart = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:a.dynamics.labels,
+      datasets:[
+        {label:'Вовлечённость', data:a.dynamics.engagement, borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,.1)', tension:.35, borderWidth:2.5, pointRadius:3},
+        {label:'Лояльность', data:a.dynamics.loyalty, borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,.1)', tension:.35, borderWidth:2.5, pointRadius:3},
+        {label:'Удовлетворённость', data:a.dynamics.satisfaction, borderColor:'#ec4899', backgroundColor:'rgba(236,72,153,.1)', tension:.35, borderWidth:2.5, pointRadius:3},
+        {label:'eNPS / 2', data:a.dynamics.enps.map(v=>v/2), borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.08)', tension:.35, borderWidth:2.5, borderDash:[6,4], pointRadius:3}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{legend:{position:'bottom', labels:{font:{size:12,family:'Inter',weight:'600'}, padding:14, usePointStyle:true, pointStyle:'circle'}},
+        tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+(c.dataset.label==='eNPS / 2'?(c.parsed.y*2).toFixed(1):c.parsed.y.toFixed(2))}}},
+      scales:{y:{min:1, max:5, grid:{color:'#e2e8f0'}, ticks:{color:'#64748b',font:{size:11}}},
+              x:{grid:{display:false}, ticks:{color:'#64748b',font:{size:10}}}}
+    }
+  });
+}
+function renderSegmentsTab(){
+  const a = window._analytics;
+  if(!a) return;
+  const fDept = document.getElementById('f-dept').value;
+  const fGrade = document.getElementById('f-grade').value;
+  const fPeriod = document.getElementById('f-period').value;
+
+  let gradeFilteredNames = null;
+  if(fGrade){
+    const emps = (()=>{try{return JSON.parse(localStorage.getItem('smartjob_employees_v1'))||[]}catch(e){return[]}})();
+    gradeFilteredNames = new Set(emps.filter(e=>e.grade===fGrade).map(e=>e.name.toLowerCase()));
+  }
+
+  let rows = a.rows.slice();
+  if(fDept) rows = rows.filter(r=>r.dept===fDept);
+  if(fPeriod !== 'all'){
+    const days = parseInt(fPeriod);
+    const cutoff = Date.now() - days*86400000;
+    rows = rows.filter(r=>new Date(r.date).getTime() >= cutoff);
+  }
+  if(gradeFilteredNames){
+    rows = rows.filter(r=> r.name && gradeFilteredNames.has(r.name.toLowerCase()));
+  }
+
+  const byDept = {};
+  rows.forEach(r=>{
+    if(!r.dept) return;
+    if(!byDept[r.dept]) byDept[r.dept] = {eng:[],loy:[],sat:[],enps:[]};
+    byDept[r.dept].eng.push(r.engagementIndex);
+    byDept[r.dept].loy.push(r.loyaltyIndex);
+    byDept[r.dept].sat.push(r.satisfactionIndex);
+    byDept[r.dept].enps.push(r.enps);
+  });
+  const segments = Object.entries(byDept)
+    .filter(([_,v])=>v.eng.length>=2)
+    .map(([name,v])=>({name, n:v.eng.length,
+      engagement:+mean(v.eng).toFixed(2), loyalty:+mean(v.loy).toFixed(2),
+      satisfaction:+mean(v.sat).toFixed(2), enps:+mean(v.enps).toFixed(2)}))
+    .sort((x,y)=>y.engagement-x.engagement);
+
+  if(a._segmentChart) a._segmentChart.destroy();
+  const ctx = document.getElementById('segmentChart').getContext('2d');
+  a._segmentChart = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:segments.map(s=>s.name),
+      datasets:[
+        {label:'Вовлечённость', data:segments.map(s=>s.engagement), backgroundColor:'#6366f1', borderRadius:6, barPercentage:.7},
+        {label:'Лояльность', data:segments.map(s=>s.loyalty), backgroundColor:'#06b6d4', borderRadius:6, barPercentage:.7},
+        {label:'Удовлетворённость', data:segments.map(s=>s.satisfaction), backgroundColor:'#ec4899', borderRadius:6, barPercentage:.7}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom', labels:{font:{size:12,family:'Inter',weight:'600'}, padding:14, usePointStyle:true, pointStyle:'circle'}},
+        tooltip:{callbacks:{afterBody:ctx=>{const s = segments[ctx[0].dataIndex]; return ['n = '+s.n, 'eNPS: '+s.enps.toFixed(1)]}}}},
+      scales:{y:{min:1, max:5, grid:{color:'#e2e8f0'}, ticks:{color:'#64748b',font:{size:11}}},
+              x:{grid:{display:false}, ticks:{color:'#64748b',font:{size:11,weight:'600'}}}}
+    }
+  });
+
+  let html = '<table class="tbl"><thead><tr><th>Отдел</th><th class="num">n</th><th class="num">Вовлеч.</th><th class="num">Лояльн.</th><th class="num">Удовл.</th><th class="num">eNPS</th></tr></thead><tbody>';
+  if(!segments.length){
+    html += '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">Нет данных под выбранные фильтры</td></tr>';
+  } else {
+    segments.forEach(s=>{
+      html += '<tr><td><strong>'+s.name+'</strong></td>'+
+        '<td class="num">'+s.n+'</td>'+
+        '<td class="num" style="color:'+scoreColor(s.engagement)+';font-weight:700">'+s.engagement.toFixed(2)+'</td>'+
+        '<td class="num" style="color:'+scoreColor(s.loyalty)+';font-weight:700">'+s.loyalty.toFixed(2)+'</td>'+
+        '<td class="num" style="color:'+scoreColor(s.satisfaction)+';font-weight:700">'+s.satisfaction.toFixed(2)+'</td>'+
+        '<td class="num" style="font-weight:700">'+s.enps.toFixed(1)+'</td></tr>';
+    });
+  }
+  html += '</tbody></table>';
+  document.getElementById('segment-table').innerHTML = html;
+}
+function renderAlerts(a){
+  if(!a.alerts.length){
+    document.getElementById('alerts-list').innerHTML =
+      '<div class="alert ok"><div class="alert-icon">'+ico('checkCircle',18)+'</div>'+
+      '<div class="alert-body"><h4>Всё стабильно</h4><p>Аномалий не обнаружено.</p></div></div>';
+    return;
+  }
+  document.getElementById('alerts-list').innerHTML = a.alerts.map(al=>
+    '<div class="alert '+al.level+'">'+
+      '<div class="alert-icon">'+ico(al.icon,18)+'</div>'+
+      '<div class="alert-body"><h4>'+al.title+'</h4><p>'+al.text+'</p></div></div>').join('');
+}
+
+function exportInsights(){
+  if(!window._analytics) return;
+  const a = window._analytics;
+  const date = new Date().toLocaleString('ru-RU');
+  let t = 'SMARTJOB ANALYTICS — ОТЧЁТ\n'+'='.repeat(60)+'\n';
+  t += 'Дата: '+date+'\n';
+  t += 'Выборка: '+a.N+' ответов\n\n';
+  t += 'СВОДНЫЕ ИНДЕКСЫ:\n';
+  t += '  Вовлечённость:      '+a.avgEng.toFixed(2)+' / 5.0\n';
+  t += '  Лояльность:         '+a.avgLoy.toFixed(2)+' / 5.0\n';
+  t += '  Удовлетворённость:  '+a.avgSat.toFixed(2)+' / 5.0\n';
+  t += '  Средний eNPS:       '+a.avgEnps.toFixed(1)+' / 10\n\n';
+  t += 'ТОП ДРАЙВЕРОВ eNPS:\n';
+  a.driverResults.slice(0,10).forEach((d,i)=>{
+    t += '  '+(i+1)+'. '+d.name.padEnd(22)+' r = '+(d.r>0?'+':'')+d.r.toFixed(3)+'  p = '+d.p.toFixed(4)+'\n';
+  });
+  if(a.reg){
+    t += '\nРЕГРЕССИЯ:\n';
+    t += '  R² = '+a.reg.rSquared.toFixed(3)+' | Adj. R² = '+a.reg.adjRSquared.toFixed(3)+'\n';
+    a.regCoefs.forEach(c=>{t += '    '+c.name.padEnd(22)+' β = '+(c.beta>0?'+':'')+c.beta.toFixed(3)+'\n'});
+  }
+  t += '\nМАТРИЦА ПРИОРИТЕТОВ:\n';
+  const q = a.quadrants;
+  t += '  ДЕЙСТВОВАТЬ ('+q.action.length+'): '+q.action.map(s=>s.name).join(', ')+'\n';
+  t += '  УДЕРЖИВАТЬ ('+q.keep.length+'): '+q.keep.map(s=>s.name).join(', ')+'\n';
+  t += '  МОНИТОРИТЬ ('+q.monitor.length+'): '+q.monitor.map(s=>s.name).join(', ')+'\n';
+  t += '  НЕ ПРИОРИТЕТ ('+q.low.length+'): '+q.low.map(s=>s.name).join(', ')+'\n';
+  t += '\nСРАВНЕНИЕ ОТДЕЛОВ:\n';
+  a.segments.forEach(s=>{
+    t += '  '+s.name.padEnd(14)+' n='+s.n+' | вовл. '+s.engagement.toFixed(2)+' | лоял. '+s.loyalty.toFixed(2)+' | удовл. '+s.satisfaction.toFixed(2)+' | eNPS '+s.enps.toFixed(1)+'\n';
+  });
+  t += '\nАЛЕРТЫ ('+a.alerts.length+'):\n';
+  a.alerts.forEach(al=>{t += '  ['+al.level.toUpperCase()+'] '+al.title+'\n    '+al.text+'\n'});
+  const blob = new Blob([t], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = 'smartjob-analytics-'+Date.now()+'.txt';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+(function init(){
+  hydrateIcons();
+  const data = loadResponses();
+  if(data.length < 20){
+    document.getElementById('empty-state').style.display = 'block';
+    return;
+  }
+  document.getElementById('content').style.display = 'block';
+  const analytics = computeAnalytics(data);
+  window._analytics = analytics;
+
+  renderKPI(analytics);
+  renderStatStrip(analytics);
+  renderHeatmap(analytics);
+  renderAlpha(analytics);
+  renderBenchmarks(analytics);
+  renderResponsesList(analytics);
+  renderDrivers(analytics);
+  renderPriorityMatrix(analytics);
+  renderCorrMatrix(analytics);
+  renderRegression(analytics);
+  renderDynamicsChart(analytics);
+  renderAlerts(analytics);
+
+  const depts = [...new Set(data.map(r=>r.dept).filter(Boolean))];
+  const sel = document.getElementById('f-dept');
+  depts.forEach(d=>{sel.innerHTML += '<option>'+d+'</option>'});
+  renderSegmentsTab();
+
+  hydrateIcons();
+})();
+</script>
+</body>
+</html>

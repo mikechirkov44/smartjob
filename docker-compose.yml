@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-smartjob}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smartjob_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-smartjob}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smartjob}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-smartjob}:${POSTGRES_PASSWORD:-smartjob_secret}@db:5432/${POSTGRES_DB:-smartjob}?schema=public
+      PORT: 3000
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:8080}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:
