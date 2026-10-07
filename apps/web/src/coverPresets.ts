@@ -20,10 +20,18 @@ export const COVER_PRESETS: CoverPreset[] = [
     label: 'Рост',
     src: '/illustrations/growth.svg',
   },
+  {
+    id: 'pulse',
+    label: 'Пульс',
+    src: '/illustrations/pulse.svg',
+  },
+  {
+    id: 'celebrate',
+    label: 'Успех',
+    src: '/illustrations/celebrate.svg',
+  },
 ];
 
 export function coverSrc(id?: string | null) {
-  return (
-    COVER_PRESETS.find((p) => p.id === id)?.src || COVER_PRESETS[0].src
-  );
+  return COVER_PRESETS.find((p) => p.id === id)?.src || COVER_PRESETS[0].src;
 }

@@ -1,13 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
-  <rect width="640" height="360" rx="24" fill="#FDF4FF"/>
-  <ellipse cx="320" cy="305" rx="220" ry="26" fill="#F5D0FE"/>
-  <path d="M120 240c40-60 80-90 140-100 50-8 90 10 130 40 35 26 80 50 130 40" stroke="#A855F7" stroke-width="8" stroke-linecap="round"/>
-  <circle cx="220" cy="150" r="18" fill="#FDBA74"/>
-  <rect x="195" y="170" width="55" height="80" rx="14" fill="#8B5CF6"/>
-  <circle cx="360" cy="120" r="18" fill="#FDBA74"/>
-  <rect x="335" y="140" width="55" height="90" rx="14" fill="#6366F1"/>
-  <rect x="430" y="160" width="90" height="55" rx="12" fill="#fff" stroke="#E9D5FF" stroke-width="3"/>
-  <path d="M450 190h50M450 175h35" stroke="#C084FC" stroke-width="6" stroke-linecap="round"/>
-  <circle cx="500" cy="90" r="20" fill="#FEF08A"/>
-  <path d="M500 78v24M488 90h24" stroke="#CA8A04" stroke-width="3" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="360" x2="640" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0FDFA"/>
+      <stop offset="1" stop-color="#FFF7ED"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="24" fill="url(#bg3)"/>
+  <path d="M80 260c60-20 90-90 140-110s90 20 140 10 80-70 140-80" stroke="#0D9488" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <circle cx="220" cy="150" r="10" fill="#EA580C"/>
+  <circle cx="360" cy="160" r="10" fill="#0891B2"/>
+  <circle cx="500" cy="90" r="12" fill="#0F766E"/>
+  <rect x="110" y="240" width="44" height="60" rx="10" fill="#99F6E4"/>
+  <rect x="180" y="210" width="44" height="90" rx="10" fill="#5EEAD4"/>
+  <rect x="250" y="180" width="44" height="120" rx="10" fill="#2DD4BF"/>
+  <rect x="320" y="150" width="44" height="150" rx="10" fill="#14B8A6"/>
+  <rect x="390" y="120" width="44" height="180" rx="10" fill="#0D9488"/>
+  <rect x="460" y="90" width="44" height="210" rx="10" fill="#0F766E"/>
+  <circle cx="560" cy="70" r="18" fill="#FDE68A"/>
 </svg>

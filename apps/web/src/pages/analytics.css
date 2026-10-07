@@ -38,8 +38,8 @@
 
 .analytics-tabs button.active {
   color: #fff;
-  background: linear-gradient(135deg, var(--primary), var(--violet));
-  box-shadow: 0 6px 14px -4px rgba(99, 102, 241, 0.5);
+  background: linear-gradient(135deg, var(--primary), var(--cyan));
+  box-shadow: 0 6px 14px -4px rgba(15, 118, 110, 0.45);
 }
 
 .kpi-grid {
@@ -66,7 +66,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary), var(--violet));
+  background: linear-gradient(90deg, var(--primary), var(--cyan));
 }
 
 .kpi.cyan::before {
@@ -74,7 +74,7 @@
 }
 
 .kpi.pink::before {
-  background: linear-gradient(90deg, var(--pink), var(--violet));
+  background: linear-gradient(90deg, var(--pink), var(--accent));
 }
 
 .kpi.amber::before {
@@ -262,7 +262,7 @@
 }
 
 .driver-row.top .driver-rank {
-  background: linear-gradient(135deg, var(--primary), var(--violet));
+  background: linear-gradient(135deg, var(--primary), var(--cyan));
   color: #fff;
 }
 
@@ -282,7 +282,7 @@
 
 .driver-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary), var(--violet));
+  background: linear-gradient(90deg, var(--primary), var(--cyan));
 }
 
 .driver-val {

@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
+import { coverSrc } from '../coverPresets';
+import { statusBadgeClass, statusLabel } from '../statusLabels';
 
 type Survey = {
   id: string;
   title: string;
   template: string;
   status: string;
+  coverImage?: string;
   closesAt?: string;
   adminCanIdentifyRespondents: boolean;
   _count: { responses: number; links: number };
@@ -17,17 +20,21 @@ type Survey = {
 export function SurveysPage() {
   const { token, organizationId } = useAuth();
   const [items, setItems] = useState<Survey[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!organizationId) return;
+    setLoading(true);
     void api<Survey[]>(`/organizations/${organizationId}/surveys`, {
       token,
       organizationId,
-    }).then(setItems);
+    })
+      .then(setItems)
+      .finally(() => setLoading(false));
   }, [token, organizationId]);
 
   return (
-    <div className="stack">
+    <div className="stack page-enter">
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <div>
           <h1 className="page-title">Опросы</h1>
@@ -37,44 +44,54 @@ export function SurveysPage() {
           Создать
         </Link>
       </div>
-      <div className="card table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Название</th>
-              <th>Шаблон</th>
-              <th>Статус</th>
-              <th>Ответы</th>
-              <th>Ссылка</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((s) => (
-              <tr key={s.id}>
-                <td>
-                  <Link to={`/surveys/${s.id}`}>
-                    <strong>{s.title}</strong>
-                  </Link>
-                </td>
-                <td>{s.template}</td>
-                <td>
-                  <span className={`badge ${s.status === 'ACTIVE' ? 'ok' : 'muted'}`}>
-                    {s.status}
+
+      {loading ? (
+        <div className="survey-grid">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="card skeleton" style={{ height: 240 }} />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="card empty-state">
+          <img src="/illustrations/empty-surveys.svg" alt="" />
+          <h3>Создайте первый опрос</h3>
+          <p className="muted" style={{ marginBottom: 16 }}>
+            Выберите обложку, шаблон вопросов и откройте кампанию по ссылке или QR.
+          </p>
+          <Link className="btn btn-primary" to="/surveys/new">
+            Создать опрос
+          </Link>
+        </div>
+      ) : (
+        <div className="survey-grid stagger">
+          {items.map((s) => (
+            <Link
+              key={s.id}
+              to={`/surveys/${s.id}`}
+              className="card survey-card interactive"
+            >
+              <img
+                className="survey-card-cover"
+                src={coverSrc(s.coverImage)}
+                alt=""
+              />
+              <div className="survey-card-body">
+                <div className="survey-card-title">{s.title}</div>
+                <div className="row">
+                  <span className={`badge ${statusBadgeClass(s.status)}`}>
+                    {statusLabel(s.status)}
                   </span>
-                </td>
-                <td>{s._count.responses}</td>
-                <td>
-                  {s.links[0] ? (
-                    <code>/s/{s.links[0].token.slice(0, 8)}…</code>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  <span className="badge muted">{s.template}</span>
+                </div>
+                <div className="survey-card-meta">
+                  <span>Ответов: {s._count.responses}</span>
+                  {s.links[0] ? <span>Ссылка готова</span> : <span>Без ссылки</span>}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

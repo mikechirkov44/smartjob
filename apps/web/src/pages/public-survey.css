@@ -1,11 +1,13 @@
 .public-wrap {
   min-height: 100vh;
-  width: min(800px, calc(100% - 24px));
+  width: min(840px, calc(100% - 24px));
   margin: 0 auto;
   padding: 28px 0 80px;
+  animation: rise 0.45s var(--ease-out);
 }
 
 .public-top h1 {
+  font-family: var(--font-display);
   font-size: clamp(22px, 4vw, 30px);
   font-weight: 800;
   letter-spacing: -0.03em;
@@ -17,6 +19,8 @@
   color: var(--primary-dark);
   font-weight: 700;
   font-size: 13px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .progress-meta {
@@ -29,7 +33,7 @@
 }
 
 .progress-bar {
-  height: 6px;
+  height: 8px;
   background: #e2e8f0;
   border-radius: 99px;
   overflow: hidden;
@@ -38,40 +42,49 @@
 
 .progress-bar > div {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary), var(--violet));
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(90deg, var(--primary), var(--cyan));
+  transition: width 0.45s var(--ease-out);
 }
 
 .public-card {
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 36px 28px;
   box-shadow: var(--shadow);
-  animation: slideIn 0.35s ease;
+  animation: questionIn 0.4s var(--ease-out);
 }
 
 .public-card.intro,
 .public-card.thankyou {
   text-align: center;
-  padding: 28px 24px 32px;
+  padding: 0 0 32px;
+  overflow: hidden;
 }
 
 .cover-img {
   width: 100%;
-  max-height: 220px;
+  max-height: none;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
-  border-radius: 16px;
-  margin-bottom: 20px;
+  border-radius: 0;
+  margin-bottom: 0;
   background: var(--primary-light);
+  display: block;
+}
+
+.intro-body,
+.thankyou-body {
+  padding: 28px 24px 8px;
 }
 
 .public-card.intro h1,
 .public-card.thankyou h1 {
-  font-size: clamp(24px, 4vw, 32px);
+  font-family: var(--font-display);
+  font-size: clamp(26px, 4vw, 34px);
   font-weight: 800;
   letter-spacing: -0.03em;
-  margin: 8px 0 12px;
+  margin: 10px 0 12px;
   color: var(--ink);
 }
 
@@ -87,7 +100,8 @@
 }
 
 .public-card.question h2 {
-  font-size: clamp(20px, 3.5vw, 24px);
+  font-family: var(--font-display);
+  font-size: clamp(20px, 3.5vw, 26px);
   line-height: 1.35;
   margin: 12px 0 10px;
   font-weight: 700;
@@ -116,8 +130,8 @@
 }
 
 .q-tag.pulse {
-  background: #fef3c7;
-  color: #b45309;
+  background: #ffedd5;
+  color: #c2410c;
 }
 
 .hint,
@@ -141,10 +155,11 @@
   aspect-ratio: 1;
   border-radius: 14px;
   border: 1.5px solid var(--border);
+  font-family: var(--font-display);
   font-weight: 800;
   font-size: 18px;
   background: #fff;
-  transition: 0.15s ease;
+  transition: 0.18s var(--ease-out);
 }
 
 .scale button:hover,
@@ -152,7 +167,8 @@
   border-color: var(--primary);
   background: var(--primary-light);
   color: var(--primary-dark);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: var(--shadow-sm);
 }
 
 .nav-row {
@@ -161,10 +177,10 @@
   margin-top: 8px;
 }
 
-@keyframes slideIn {
+@keyframes questionIn {
   from {
     opacity: 0;
-    transform: translateX(12px);
+    transform: translateX(16px);
   }
   to {
     opacity: 1;
@@ -179,5 +195,17 @@
 
   .public-card {
     padding: 22px 16px;
+  }
+
+  .intro-body,
+  .thankyou-body {
+    padding: 22px 16px 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-wrap,
+  .public-card {
+    animation: none;
   }
 }

@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
 import { coverSrc } from '../coverPresets';
+import { statusBadgeClass, statusLabel } from '../statusLabels';
 
 type Survey = {
   id: string;
@@ -109,34 +110,40 @@ export function SurveyDetailPage() {
   };
 
   if (!survey) {
-    return <div className="card">{error || 'Загрузка…'}</div>;
+    return (
+      <div className="card page-enter">
+        {error || <div className="skeleton" style={{ height: 24, width: '40%' }} />}
+      </div>
+    );
   }
 
   const personalLinks = survey.links.filter((l) => l.type === 'PERSONAL');
 
   return (
-    <div className="stack">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <div>
-          <Link to="/surveys" className="muted">
-            ← К опросам
-          </Link>
-          <h1 className="page-title">{survey.title}</h1>
-          <p className="page-sub">
-            {survey.template} · ответов: {survey._count.responses}
-          </p>
-          <img
-            src={coverSrc(survey.coverImage)}
-            alt=""
-            style={{
-              width: 'min(360px, 100%)',
-              borderRadius: 14,
-              marginTop: 8,
-              border: '1px solid var(--border)',
-            }}
-          />
+    <div className="stack page-enter">
+      <Link to="/surveys" className="muted">
+        ← К опросам
+      </Link>
+      <div className="card detail-hero">
+        <img src={coverSrc(survey.coverImage)} alt="" />
+        <div className="detail-hero-body">
+          <h1 className="page-title" style={{ marginBottom: 8 }}>
+            {survey.title}
+          </h1>
+          <div className="row">
+            <span className={`badge ${statusBadgeClass(survey.status)}`}>
+              {statusLabel(survey.status)}
+            </span>
+            <span className="badge muted">{survey.template}</span>
+            <span className="muted">ответов: {survey._count.responses}</span>
+          </div>
+          {survey.description && (
+            <p className="muted" style={{ marginTop: 10 }}>
+              {survey.description}
+            </p>
+          )}
         </div>
-        <div className="row">
+        <div className="detail-hero-actions row">
           {survey.status !== 'ACTIVE' && (
             <button className="btn btn-primary" onClick={() => void setStatus('ACTIVE')}>
               Открыть

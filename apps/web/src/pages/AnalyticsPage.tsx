@@ -627,7 +627,7 @@ export function AnalyticsPage() {
                     {
                       label: 'Вовлечённость',
                       data: data.dynamics.engagement,
-                      borderColor: '#6366f1',
+                      borderColor: '#0f766e',
                       backgroundColor: 'rgba(99,102,241,.12)',
                       tension: 0.3,
                       fill: false,

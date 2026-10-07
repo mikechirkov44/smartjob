@@ -1,0 +1,148 @@
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  background: var(--bg);
+}
+
+.login-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  color: #fff;
+}
+
+.login-hero-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: heroIn 0.9s var(--ease-out);
+}
+
+.login-hero-copy {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(32px, 5vw, 64px);
+  background: linear-gradient(180deg, transparent 35%, rgba(4, 47, 46, 0.72) 100%);
+  animation: rise 0.7s var(--ease-out) 0.1s both;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.login-brand .brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  background: linear-gradient(135deg, #99f6e4, #5eead4);
+  color: #115e59;
+  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.35);
+}
+
+.login-brand strong {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.login-hero-copy h1 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  max-width: 14ch;
+  margin-bottom: 12px;
+}
+
+.login-hero-copy p {
+  max-width: 36ch;
+  font-size: 17px;
+  line-height: 1.5;
+  color: rgba(240, 253, 250, 0.9);
+}
+
+.login-panel {
+  display: grid;
+  place-items: center;
+  padding: 32px 24px;
+  animation: rise 0.55s var(--ease-out) 0.15s both;
+}
+
+.login-form {
+  width: min(400px, 100%);
+}
+
+.login-form h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.login-form-sub {
+  color: var(--muted);
+  margin-bottom: 28px;
+  font-size: 15px;
+}
+
+.login-submit {
+  width: 100%;
+  margin-top: 8px;
+}
+
+@keyframes heroIn {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .login-hero {
+    min-height: 42vh;
+  }
+
+  .login-hero-copy h1 {
+    max-width: none;
+  }
+
+  .login-panel {
+    place-items: start center;
+    padding-top: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-hero-art,
+  .login-hero-copy,
+  .login-panel {
+    animation: none;
+  }
+}

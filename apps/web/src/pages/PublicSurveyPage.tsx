@@ -98,9 +98,11 @@ export function PublicSurveyPage() {
     return (
       <div className="public-wrap">
         <div className="public-card thankyou">
-          <img src={coverSrc(data.survey.coverImage)} alt="" className="cover-img" />
-          <h1>Спасибо!</h1>
-          <p>Ваши ответы сохранены. Опрос анонимный для коллег.</p>
+          <img src="/illustrations/celebrate.svg" alt="" className="cover-img" />
+          <div className="thankyou-body">
+            <h1>Спасибо!</h1>
+            <p>Ваши ответы сохранены. Опрос анонимный для коллег.</p>
+          </div>
         </div>
       </div>
     );
@@ -115,14 +117,18 @@ export function PublicSurveyPage() {
             alt=""
             className="cover-img"
           />
-          <div className="public-org">{data.organizationName}</div>
-          <h1>{data.survey.title}</h1>
-          {data.survey.description && <p className="intro-desc">{data.survey.description}</p>}
-          <p className="anon">{data.anonymousNotice}</p>
-          <p className="muted">Вопросов: {questions.length}</p>
-          <button className="btn btn-primary start-btn" onClick={() => setStarted(true)}>
-            Начать опрос
-          </button>
+          <div className="intro-body">
+            <div className="public-org">{data.organizationName}</div>
+            <h1>{data.survey.title}</h1>
+            {data.survey.description && (
+              <p className="intro-desc">{data.survey.description}</p>
+            )}
+            <p className="anon">{data.anonymousNotice}</p>
+            <p className="muted">Вопросов: {questions.length}</p>
+            <button className="btn btn-primary start-btn" onClick={() => setStarted(true)}>
+              Начать опрос
+            </button>
+          </div>
         </div>
       </div>
     );
