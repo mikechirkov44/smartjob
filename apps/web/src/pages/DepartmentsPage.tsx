@@ -50,10 +50,18 @@ export function DepartmentsPage() {
   };
 
   return (
-    <div className="stack">
-      <div>
-        <h1 className="page-title">Отделы</h1>
-        <p className="page-sub">Структура компании для сегментации ответов.</p>
+    <div className="stack page-enter">
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 className="page-title">Отделы</h1>
+          <p className="page-sub">Структура компании для сегментации ответов.</p>
+        </div>
+        <img
+          className="page-hero-illust"
+          src="/illustrations/departments.svg"
+          alt=""
+          aria-hidden="true"
+        />
       </div>
       <form className="card row" onSubmit={onCreate}>
         <input
@@ -67,28 +75,36 @@ export function DepartmentsPage() {
       </form>
       {error && <div className="error">{error}</div>}
       <div className="card table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Отдел</th>
-              <th>Сотрудники</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((d) => (
-              <tr key={d.id}>
-                <td>{d.name}</td>
-                <td>{d._count.employees}</td>
-                <td>
-                  <button className="btn btn-danger btn-sm" onClick={() => void onDelete(d.id)}>
-                    Удалить
-                  </button>
-                </td>
+        {items.length === 0 ? (
+          <div className="empty-state">
+            <img src="/illustrations/departments.svg" alt="" className="illust-float" />
+            <h3>Отделов пока нет</h3>
+            <p className="muted">Создайте структуру компании — это поможет сегментировать ответы в аналитике.</p>
+          </div>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Отдел</th>
+                <th>Сотрудники</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((d) => (
+                <tr key={d.id}>
+                  <td>{d.name}</td>
+                  <td>{d._count.employees}</td>
+                  <td>
+                    <button className="btn btn-danger btn-sm" onClick={() => void onDelete(d.id)}>
+                      Удалить
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

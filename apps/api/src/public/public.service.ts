@@ -70,6 +70,7 @@ export class PublicService {
           metric: q.metric,
           category: q.category,
           type: q.type,
+          scaleMax: q.scaleMax,
           sortOrder: q.sortOrder,
         })),
       },
@@ -100,18 +101,32 @@ export class PublicService {
     }
 
     const questionMap = new Map(survey.questions.map((q) => [q.id, q]));
+    const answeredIds = new Set(dto.answers.map((a) => a.questionId));
+    for (const question of survey.questions) {
+      if (!answeredIds.has(question.id)) {
+        throw new BadRequestException('Ответьте на все вопросы');
+      }
+    }
+
     for (const answer of dto.answers) {
       const question = questionMap.get(answer.questionId);
       if (!question) {
         throw new BadRequestException('Некорректный вопрос в ответе');
       }
+      if (question.type === QuestionType.TEXT) {
+        if (!answer.valueText?.trim()) {
+          throw new BadRequestException('Текстовый ответ не может быть пустым');
+        }
+        continue;
+      }
       if (question.type === QuestionType.LIKERT) {
+        const max = question.scaleMax === 10 ? 10 : 5;
         if (
           answer.valueInt == null ||
           answer.valueInt < 1 ||
-          answer.valueInt > 5
+          answer.valueInt > max
         ) {
-          throw new BadRequestException('Оценка должна быть от 1 до 5');
+          throw new BadRequestException(`Оценка должна быть от 1 до ${max}`);
         }
       }
       if (question.type === QuestionType.ENPS) {

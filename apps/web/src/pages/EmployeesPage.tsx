@@ -67,10 +67,18 @@ export function EmployeesPage() {
   };
 
   return (
-    <div className="stack">
-      <div>
-        <h1 className="page-title">Сотрудники</h1>
-        <p className="page-sub">Для персональных ссылок и идентификации админом.</p>
+    <div className="stack page-enter">
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 className="page-title">Сотрудники</h1>
+          <p className="page-sub">Для персональных ссылок и идентификации админом.</p>
+        </div>
+        <img
+          className="page-hero-illust"
+          src="/illustrations/employees.svg"
+          alt=""
+          aria-hidden="true"
+        />
       </div>
 
       <form className="card grid-2" onSubmit={onCreate}>
@@ -129,26 +137,34 @@ export function EmployeesPage() {
       {error && <div className="error">{error}</div>}
 
       <div className="card table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ФИО</th>
-              <th>Email</th>
-              <th>Отдел</th>
-              <th>Грейд</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((e) => (
-              <tr key={e.id}>
-                <td>{e.fullName}</td>
-                <td>{e.email || '—'}</td>
-                <td>{e.department?.name || '—'}</td>
-                <td>{e.grade || '—'}</td>
+        {items.length === 0 ? (
+          <div className="empty-state">
+            <img src="/illustrations/employees.svg" alt="" className="illust-float" />
+            <h3>Пока нет сотрудников</h3>
+            <p className="muted">Добавьте людей выше или импортируйте CSV — затем можно выдавать персональные ссылки.</p>
+          </div>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>ФИО</th>
+                <th>Email</th>
+                <th>Отдел</th>
+                <th>Грейд</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((e) => (
+                <tr key={e.id}>
+                  <td>{e.fullName}</td>
+                  <td>{e.email || '—'}</td>
+                  <td>{e.department?.name || '—'}</td>
+                  <td>{e.grade || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

@@ -105,6 +105,7 @@ export class AnalyticsService {
         metric: string | null;
         category: string | null;
         type: string;
+        scaleMax: number;
       }>;
       responses: Array<{
         id: string;
@@ -129,25 +130,34 @@ export class AnalyticsService {
         };
 
         for (const answer of response.answers) {
-          if (answer.valueInt == null || answer.valueInt < 1 || answer.valueInt > 5) {
+          const q = qMap.get(answer.questionId);
+          if (!q || q.type === 'ENPS' || q.type === 'TEXT') continue;
+          if (answer.valueInt == null || answer.valueInt < 1 || answer.valueInt > 10) {
             continue;
           }
-          const q = qMap.get(answer.questionId);
-          if (!q || q.type === 'ENPS') continue;
+          const scaleMax = q.scaleMax === 10 ? 10 : 5;
+          if (answer.valueInt > scaleMax) continue;
+          // Нормализуем шкалу 1–10 к 1–5 для сопоставимости индексов.
+          const normalized =
+            scaleMax === 10
+              ? 1 + ((answer.valueInt - 1) / 9) * 4
+              : answer.valueInt;
           const metric = q.metric || 'Общее';
           const list = metricBuckets.get(metric) || [];
-          list.push(answer.valueInt);
+          list.push(normalized);
           metricBuckets.set(metric, list);
 
           const cat = (q.category || '').toLowerCase();
           if (cat === 'engagement' || cat === 'pulse') {
-            byCategory.engagement.push(answer.valueInt);
+            byCategory.engagement.push(normalized);
           } else if (cat === 'loyalty') {
-            byCategory.loyalty.push(answer.valueInt);
+            byCategory.loyalty.push(normalized);
           } else if (cat === 'satisfaction') {
-            byCategory.satisfaction.push(answer.valueInt);
+            byCategory.satisfaction.push(normalized);
+          } else if (cat === 'importance' || cat === 'profile' || cat === 'open') {
+            // skip category indexes
           } else {
-            byCategory.engagement.push(answer.valueInt);
+            byCategory.engagement.push(normalized);
           }
         }
 

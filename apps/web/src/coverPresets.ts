@@ -30,6 +30,21 @@ export const COVER_PRESETS: CoverPreset[] = [
     label: 'Успех',
     src: '/illustrations/celebrate.svg',
   },
+  {
+    id: 'work-conditions',
+    label: 'Условия труда',
+    src: '/illustrations/work-conditions.svg',
+  },
+  {
+    id: 'office',
+    label: 'Офис',
+    src: '/illustrations/office.svg',
+  },
+  {
+    id: 'analytics',
+    label: 'Аналитика',
+    src: '/illustrations/analytics.svg',
+  },
 ];
 
 export function coverSrc(id?: string | null) {

@@ -21,8 +21,10 @@ import {
 import {
   ENPS_QUESTION,
   FULL_TEMPLATE,
+  mapQuestionType,
   PULSE_TEMPLATE,
   TemplateQuestion,
+  WORK_CONDITIONS_TEMPLATE,
 } from './templates';
 
 @Injectable()
@@ -40,6 +42,19 @@ export class SurveysService {
     return randomBytes(16).toString('hex');
   }
 
+  private toQuestionType(type?: TemplateQuestion['type']): QuestionType {
+    const mapped = mapQuestionType(type);
+    if (mapped === 'ENPS') return QuestionType.ENPS;
+    if (mapped === 'TEXT') return QuestionType.TEXT;
+    return QuestionType.LIKERT;
+  }
+
+  private toScaleMax(q: TemplateQuestion): number {
+    if (q.type === 'ENPS') return 10;
+    if (q.type === 'TEXT') return 5;
+    return q.scaleMax === 10 ? 10 : 5;
+  }
+
   private resolveTemplateQuestions(
     template: SurveyTemplate,
     includeEnps: boolean,
@@ -55,12 +70,17 @@ export class SurveysService {
         text: q.text,
         metric: q.metric || 'Общее',
         category: q.category || 'custom',
-        type: q.type === QuestionType.ENPS ? 'ENPS' : 'LIKERT',
+        type: mapQuestionType(q.type),
+        scaleMax: q.type === QuestionType.ENPS ? 10 : 5,
       }));
       if (includeEnps && !questions.some((q) => q.type === 'ENPS')) {
         questions.push(ENPS_QUESTION);
       }
       return questions;
+    }
+
+    if (template === SurveyTemplate.WORK_CONDITIONS) {
+      return [...WORK_CONDITIONS_TEMPLATE];
     }
 
     const base =
@@ -108,7 +128,10 @@ export class SurveysService {
   }
 
   async create(organizationId: string, dto: CreateSurveyDto) {
-    const includeEnps = dto.includeEnps ?? true;
+    const includeEnps =
+      dto.template === SurveyTemplate.WORK_CONDITIONS
+        ? true
+        : (dto.includeEnps ?? true);
     const questions = this.resolveTemplateQuestions(
       dto.template,
       includeEnps,
@@ -133,7 +156,8 @@ export class SurveysService {
               text: q.text,
               metric: q.metric,
               category: q.category,
-              type: q.type === 'ENPS' ? QuestionType.ENPS : QuestionType.LIKERT,
+              type: this.toQuestionType(q.type),
+              scaleMax: this.toScaleMax(q),
             })),
           },
         },
@@ -205,7 +229,8 @@ export class SurveysService {
             text: q.text,
             metric: q.metric,
             category: q.category,
-            type: q.type === 'ENPS' ? QuestionType.ENPS : QuestionType.LIKERT,
+            type: this.toQuestionType(q.type),
+            scaleMax: this.toScaleMax(q),
           })),
         });
       }

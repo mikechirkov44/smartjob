@@ -147,8 +147,46 @@
   margin: 28px 0 18px;
 }
 
-.scale.enps {
-  grid-template-columns: repeat(6, 1fr);
+.scale.enps,
+.scale.scale-10 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.scale.scale-10 button,
+.scale.enps button {
+  font-size: 15px;
+  aspect-ratio: 1.1;
+}
+
+.q-tag.importance {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.text-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 22px 0 12px;
+  text-align: left;
+}
+
+.text-answer textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  resize: vertical;
+  min-height: 120px;
+  background: #fff;
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.text-answer textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
 }
 
 .scale button {
@@ -160,7 +198,20 @@
   font-size: 18px;
   background: #fff;
   transition: 0.18s var(--ease-out);
+  animation: rise 0.35s var(--ease-out) both;
 }
+
+.scale button:nth-child(1) { animation-delay: 0.02s; }
+.scale button:nth-child(2) { animation-delay: 0.04s; }
+.scale button:nth-child(3) { animation-delay: 0.06s; }
+.scale button:nth-child(4) { animation-delay: 0.08s; }
+.scale button:nth-child(5) { animation-delay: 0.1s; }
+.scale button:nth-child(6) { animation-delay: 0.12s; }
+.scale button:nth-child(7) { animation-delay: 0.14s; }
+.scale button:nth-child(8) { animation-delay: 0.16s; }
+.scale button:nth-child(9) { animation-delay: 0.18s; }
+.scale button:nth-child(10) { animation-delay: 0.2s; }
+.scale button:nth-child(11) { animation-delay: 0.22s; }
 
 .scale button:hover,
 .scale button.active {
@@ -180,7 +231,7 @@
 @keyframes questionIn {
   from {
     opacity: 0;
-    transform: translateX(16px);
+    transform: translateX(18px) scale(0.985);
   }
   to {
     opacity: 1;
@@ -188,9 +239,14 @@
   }
 }
 
+.public-card.question {
+  transform-origin: center top;
+}
+
 @media (max-width: 520px) {
-  .scale.enps {
-    grid-template-columns: repeat(4, 1fr);
+  .scale.enps,
+  .scale.scale-10 {
+    grid-template-columns: repeat(5, 1fr);
   }
 
   .public-card {

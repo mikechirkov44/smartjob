@@ -29,6 +29,7 @@ enum SurveyTemplate {
   FULL
   PULSE
   CUSTOM
+  WORK_CONDITIONS
 }
 
 enum QuestionType {
@@ -138,6 +139,7 @@ model SurveyQuestion {
   surveyId  String
   sortOrder Int
   type      QuestionType @default(LIKERT)
+  scaleMax  Int          @default(5)
   metric    String?
   category  String?
   text      String

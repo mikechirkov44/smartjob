@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { coverSrc } from '../coverPresets';
@@ -10,7 +10,10 @@ type Question = {
   metric?: string;
   category?: string;
   type: 'LIKERT' | 'ENPS' | 'TEXT';
+  scaleMax?: number;
 };
+
+type AnswerValue = { valueInt?: number; valueText?: string };
 
 type Payload = {
   organizationName: string;
@@ -30,7 +33,8 @@ export function PublicSurveyPage() {
   const [error, setError] = useState('');
   const [started, setStarted] = useState(false);
   const [idx, setIdx] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
+  const [textDraft, setTextDraft] = useState('');
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -48,22 +52,24 @@ export function PublicSurveyPage() {
     [idx, questions.length],
   );
 
-  const choose = async (value: number) => {
-    if (!current || !token || !data) return;
-    const nextAnswers = { ...answers, [current.id]: value };
-    setAnswers(nextAnswers);
-    if (idx < questions.length - 1) {
-      setIdx((i) => i + 1);
-      return;
+  useEffect(() => {
+    if (!current) return;
+    if (current.type === 'TEXT') {
+      setTextDraft(answers[current.id]?.valueText || '');
     }
+  }, [current?.id]);
+
+  const submitAll = async (nextAnswers: Record<string, AnswerValue>) => {
+    if (!token) return;
     setBusy(true);
     try {
       await api(`/public/surveys/${token}/submit`, {
         method: 'POST',
         body: {
-          answers: Object.entries(nextAnswers).map(([questionId, valueInt]) => ({
+          answers: Object.entries(nextAnswers).map(([questionId, value]) => ({
             questionId,
-            valueInt,
+            valueInt: value.valueInt,
+            valueText: value.valueText,
           })),
         },
       });
@@ -75,12 +81,38 @@ export function PublicSurveyPage() {
     }
   };
 
+  const advance = async (nextAnswers: Record<string, AnswerValue>) => {
+    setAnswers(nextAnswers);
+    if (idx < questions.length - 1) {
+      setIdx((i) => i + 1);
+      return;
+    }
+    await submitAll(nextAnswers);
+  };
+
+  const choose = async (value: number) => {
+    if (!current || !token || !data) return;
+    await advance({ ...answers, [current.id]: { valueInt: value } });
+  };
+
+  const submitText = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!current || !textDraft.trim()) return;
+    await advance({
+      ...answers,
+      [current.id]: { valueText: textDraft.trim() },
+    });
+  };
+
   if (error) {
     return (
       <div className="public-wrap">
-        <div className="public-card">
-          <h1>Опрос недоступен</h1>
-          <p>{error}</p>
+        <div className="public-card thankyou">
+          <img src="/illustrations/unavailable.svg" alt="" className="cover-img" />
+          <div className="thankyou-body">
+            <h1>Опрос недоступен</h1>
+            <p>{error}</p>
+          </div>
         </div>
       </div>
     );
@@ -134,9 +166,9 @@ export function PublicSurveyPage() {
     );
   }
 
-  const max = current?.type === 'ENPS' ? 10 : 5;
+  const scaleMax = current?.type === 'ENPS' ? 10 : current?.scaleMax === 10 ? 10 : 5;
   const min = current?.type === 'ENPS' ? 0 : 1;
-  const options = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  const options = Array.from({ length: scaleMax - min + 1 }, (_, i) => min + i);
   const tagClass =
     current?.category === 'loyalty'
       ? 'loyalty'
@@ -144,7 +176,18 @@ export function PublicSurveyPage() {
         ? 'satisfaction'
         : current?.category === 'pulse'
           ? 'pulse'
-          : '';
+          : current?.category === 'importance'
+            ? 'importance'
+            : '';
+
+  const hint =
+    current?.type === 'ENPS'
+      ? '0 — точно нет, 10 — обязательно да'
+      : current?.type === 'TEXT'
+        ? 'Введите ответ своими словами'
+        : scaleMax === 10
+          ? '1 — минимально, 10 — максимально'
+          : '1 — совершенно не согласен, 5 — полностью согласен';
 
   return (
     <div className="public-wrap">
@@ -169,23 +212,44 @@ export function PublicSurveyPage() {
       <div className="public-card question" key={current?.id}>
         <div className={`q-tag ${tagClass}`}>{current?.metric || current?.type}</div>
         <h2>{current?.text}</h2>
-        <p className="hint">
-          {current?.type === 'ENPS'
-            ? '0 — точно нет, 10 — обязательно да'
-            : '1 — совершенно не согласен, 5 — полностью согласен'}
-        </p>
-        <div className={`scale ${current?.type === 'ENPS' ? 'enps' : ''}`}>
-          {options.map((n) => (
-            <button
-              key={n}
+        <p className="hint">{hint}</p>
+
+        {current?.type === 'TEXT' ? (
+          <form className="text-answer" onSubmit={(e) => void submitText(e)}>
+            <textarea
+              rows={4}
+              value={textDraft}
+              onChange={(e) => setTextDraft(e.target.value)}
+              placeholder="Ваш ответ…"
+              required
               disabled={busy}
-              className={answers[current.id] === n ? 'active' : ''}
-              onClick={() => void choose(n)}
+            />
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={busy || !textDraft.trim()}
             >
-              {n}
+              {idx < questions.length - 1 ? 'Далее' : 'Отправить'}
             </button>
-          ))}
-        </div>
+          </form>
+        ) : (
+          <div
+            className={`scale ${scaleMax >= 10 ? 'scale-10' : ''} ${current?.type === 'ENPS' ? 'enps' : ''}`}
+          >
+            {options.map((n) => (
+              <button
+                key={n}
+                type="button"
+                disabled={busy}
+                className={answers[current.id]?.valueInt === n ? 'active' : ''}
+                onClick={() => void choose(n)}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="nav-row">
           <button
             className="btn btn-secondary"

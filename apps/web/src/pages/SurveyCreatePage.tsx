@@ -52,7 +52,7 @@ export function SurveyCreatePage() {
   };
 
   return (
-    <div className="stack">
+    <div className="stack page-enter">
       <div>
         <h1 className="page-title">Новый опрос</h1>
         <p className="page-sub">Выберите шаблон или соберите свой.</p>
@@ -99,10 +99,22 @@ export function SurveyCreatePage() {
               className="grow"
               value={form.template}
               placeholder="Шаблон"
-              onChange={(template) => setForm((f) => ({ ...f, template }))}
+              onChange={(template) =>
+                setForm((f) => ({
+                  ...f,
+                  template,
+                  includeEnps: template === 'WORK_CONDITIONS' ? true : f.includeEnps,
+                  coverImage:
+                    template === 'WORK_CONDITIONS' ? 'work-conditions' : f.coverImage,
+                }))
+              }
               options={[
                 { value: 'FULL', label: 'Полный (29 вопросов + eNPS)' },
                 { value: 'PULSE', label: 'Пульс (7 вопросов)' },
+                {
+                  value: 'WORK_CONDITIONS',
+                  label: 'Условия труда (21 вопрос, шкала 1–10)',
+                },
                 { value: 'CUSTOM', label: 'Свой опрос' },
               ]}
             />
@@ -116,12 +128,20 @@ export function SurveyCreatePage() {
             />
           </div>
         </div>
-        <CustomCheckbox
-          variant="toggle"
-          checked={form.includeEnps}
-          onChange={(includeEnps) => setForm((f) => ({ ...f, includeEnps }))}
-          label="Добавить eNPS"
-        />
+        {form.template !== 'WORK_CONDITIONS' && (
+          <CustomCheckbox
+            variant="toggle"
+            checked={form.includeEnps}
+            onChange={(includeEnps) => setForm((f) => ({ ...f, includeEnps }))}
+            label="Добавить eNPS"
+          />
+        )}
+        {form.template === 'WORK_CONDITIONS' && (
+          <p className="muted">
+            Шаблон включает ФИО и открытые ответы (текст), шкалу 1–10 и вопрос о рекомендации
+            компании (eNPS).
+          </p>
+        )}
         <CustomCheckbox
           variant="toggle"
           checked={form.adminCanIdentifyRespondents}

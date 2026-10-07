@@ -162,7 +162,20 @@ export function AnalyticsPage() {
   };
 
   if (!data) {
-    return <div className="card">Загрузка аналитики…</div>;
+    return (
+      <div className="stack page-enter">
+        <div className="card empty-state">
+          <img src="/illustrations/analytics.svg" alt="" className="illust-float" />
+          <h3>Загрузка аналитики…</h3>
+          <div className="skeleton" style={{ height: 12, width: '50%', margin: '16px auto 0' }} />
+        </div>
+        <div className="grid-4 stagger">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="card skeleton" style={{ height: 110 }} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const maxR = Math.max(...data.driverResults.map((d) => Math.abs(d.r)), 0.01);
@@ -171,13 +184,21 @@ export function AnalyticsPage() {
   );
 
   return (
-    <div className="stack">
+    <div className="stack page-enter">
       <div className="analytics-head">
-        <div>
-          <h1 className="page-title">Аналитика</h1>
-          <p className="page-sub">
-            Драйверный анализ, регрессия, матрица приоритетов и динамика — на ваших данных
-          </p>
+        <div className="row" style={{ alignItems: 'flex-start', gap: 20 }}>
+          <div>
+            <h1 className="page-title">Аналитика</h1>
+            <p className="page-sub">
+              Драйверный анализ, регрессия, матрица приоритетов и динамика — на ваших данных
+            </p>
+          </div>
+          <img
+            className="page-hero-illust"
+            src="/illustrations/analytics.svg"
+            alt=""
+            aria-hidden="true"
+          />
         </div>
         <div className="row">
           <CustomSelect

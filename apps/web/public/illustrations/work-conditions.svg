@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="wc" x1="0" y1="0" x2="640" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0FDFA"/>
+      <stop offset="1" stop-color="#ECFEFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="24" fill="url(#wc)"/>
+  <rect x="70" y="70" width="200" height="220" rx="20" fill="#fff" stroke="#99F6E4" stroke-width="3"/>
+  <rect x="96" y="100" width="120" height="12" rx="6" fill="#99F6E4"/>
+  <rect x="96" y="130" width="148" height="10" rx="5" fill="#CCFBF1"/>
+  <rect x="96" y="158" width="100" height="10" rx="5" fill="#CCFBF1"/>
+  <circle cx="120" cy="220" r="14" fill="#FDBA74"/>
+  <circle cx="160" cy="220" r="14" fill="#0D9488"/>
+  <circle cx="200" cy="220" r="14" fill="#0891B2"/>
+  <rect x="320" y="90" width="220" height="40" rx="12" fill="#CCFBF1"/>
+  <rect x="330" y="100" width="80" height="20" rx="8" fill="#0F766E"/>
+  <rect x="320" y="150" width="220" height="40" rx="12" fill="#E0F2FE"/>
+  <rect x="330" y="160" width="120" height="20" rx="8" fill="#0891B2"/>
+  <rect x="320" y="210" width="220" height="40" rx="12" fill="#FFF7ED"/>
+  <rect x="330" y="220" width="160" height="20" rx="8" fill="#EA580C"/>
+  <circle cx="560" cy="70" r="16" fill="#FDE68A"/>
+</svg>
