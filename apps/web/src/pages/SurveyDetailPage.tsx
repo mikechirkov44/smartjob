@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
+import { CustomCheckbox } from '../components/CustomCheckbox';
 import { coverSrc } from '../coverPresets';
 import { statusBadgeClass, statusLabel } from '../statusLabels';
 
@@ -87,13 +88,13 @@ export function SurveyDetailPage() {
     await load();
   };
 
-  const toggleIdentify = async () => {
+  const toggleIdentify = async (value: boolean) => {
     if (!survey) return;
     await api(`/organizations/${organizationId}/surveys/${id}`, {
       token,
       organizationId,
       method: 'PATCH',
-      body: { adminCanIdentifyRespondents: !survey.adminCanIdentifyRespondents },
+      body: { adminCanIdentifyRespondents: value },
     });
     await load();
   };
@@ -182,35 +183,27 @@ export function SurveyDetailPage() {
 
         <div className="card stack">
           <h3>Настройки анонимности</h3>
-          <label className="row">
-            <input
-              type="checkbox"
-              checked={survey.adminCanIdentifyRespondents}
-              onChange={() => void toggleIdentify()}
-            />
-            Админ видит личность по персональным ссылкам
-          </label>
-          <p className="muted">
-            Для сотрудника опрос всегда выглядит анонимным. Идентификация возможна только
-            при персональных ссылках и включённой опции.
-          </p>
+          <CustomCheckbox
+            variant="toggle"
+            checked={survey.adminCanIdentifyRespondents}
+            onChange={(value) => void toggleIdentify(value)}
+            label="Админ видит личность по персональным ссылкам"
+            description="Для сотрудника опрос всегда выглядит анонимным. Идентификация возможна только при персональных ссылках и включённой опции."
+          />
           <h4>Персональные ссылки</h4>
-          <div className="stack" style={{ maxHeight: 180, overflow: 'auto' }}>
+          <div className="stack" style={{ maxHeight: 180, overflow: 'auto', gap: 10 }}>
             {employees.map((e) => (
-              <label key={e.id} className="row">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(e.id)}
-                  onChange={(ev) =>
-                    setSelected((list) =>
-                      ev.target.checked
-                        ? [...list, e.id]
-                        : list.filter((id) => id !== e.id),
-                    )
-                  }
-                />
-                {e.fullName}
-              </label>
+              <CustomCheckbox
+                key={e.id}
+                id={`emp-${e.id}`}
+                checked={selected.includes(e.id)}
+                onChange={(checked) =>
+                  setSelected((list) =>
+                    checked ? [...list, e.id] : list.filter((id) => id !== e.id),
+                  )
+                }
+                label={e.fullName}
+              />
             ))}
           </div>
           <button

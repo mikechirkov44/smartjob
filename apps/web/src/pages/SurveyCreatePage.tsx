@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
+import { CustomCheckbox } from '../components/CustomCheckbox';
 import { CustomSelect } from '../components/CustomSelect';
 import { COVER_PRESETS } from '../coverPresets';
 
@@ -115,24 +116,21 @@ export function SurveyCreatePage() {
             />
           </div>
         </div>
-        <label className="row">
-          <input
-            type="checkbox"
-            checked={form.includeEnps}
-            onChange={(e) => setForm((f) => ({ ...f, includeEnps: e.target.checked }))}
-          />
-          Добавить eNPS
-        </label>
-        <label className="row">
-          <input
-            type="checkbox"
-            checked={form.adminCanIdentifyRespondents}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, adminCanIdentifyRespondents: e.target.checked }))
-            }
-          />
-          Админ может видеть, кто ответил (только персональные ссылки)
-        </label>
+        <CustomCheckbox
+          variant="toggle"
+          checked={form.includeEnps}
+          onChange={(includeEnps) => setForm((f) => ({ ...f, includeEnps }))}
+          label="Добавить eNPS"
+        />
+        <CustomCheckbox
+          variant="toggle"
+          checked={form.adminCanIdentifyRespondents}
+          onChange={(adminCanIdentifyRespondents) =>
+            setForm((f) => ({ ...f, adminCanIdentifyRespondents }))
+          }
+          label="Админ может видеть, кто ответил"
+          description="Только по персональным ссылкам. Для сотрудника опрос всегда выглядит анонимным."
+        />
 
         {form.template === 'CUSTOM' && (
           <div className="stack">
