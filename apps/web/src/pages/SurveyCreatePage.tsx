@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
 import { CustomCheckbox } from '../components/CustomCheckbox';
+import { CustomDateTimePicker } from '../components/CustomDateTimePicker';
 import { CustomSelect } from '../components/CustomSelect';
 import { COVER_PRESETS } from '../coverPresets';
 
@@ -121,10 +122,10 @@ export function SurveyCreatePage() {
           </div>
           <div className="field">
             <label>Дата закрытия</label>
-            <input
-              type="datetime-local"
+            <CustomDateTimePicker
               value={form.closesAt}
-              onChange={(e) => setForm((f) => ({ ...f, closesAt: e.target.value }))}
+              onChange={(closesAt) => setForm((f) => ({ ...f, closesAt }))}
+              ariaLabel="Дата закрытия"
             />
           </div>
         </div>

@@ -1,0 +1,234 @@
+.custom-datetime {
+  position: relative;
+  width: 100%;
+}
+
+.custom-datetime-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  text-align: left;
+}
+
+.custom-datetime-trigger.placeholder {
+  color: var(--soft);
+  font-weight: 500;
+}
+
+.custom-datetime-trigger:hover,
+.custom-datetime.open .custom-datetime-trigger {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.custom-datetime-icon {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.custom-datetime-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  min-width: min(100%, 360px);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: fade 0.15s ease;
+}
+
+.custom-datetime-body {
+  display: flex;
+  gap: 0;
+}
+
+.custom-datetime-cal {
+  padding: 14px 14px 8px;
+  min-width: 260px;
+}
+
+.custom-datetime-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.custom-datetime-month {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.custom-datetime-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.custom-datetime-nav button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+}
+
+.custom-datetime-nav button:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.custom-datetime-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.custom-datetime-weekdays span {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--soft);
+  padding: 4px 0;
+}
+
+.custom-datetime-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.custom-datetime-day {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.custom-datetime-day.outside {
+  color: var(--soft);
+  font-weight: 500;
+}
+
+.custom-datetime-day:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.custom-datetime-day.today:not(.selected) {
+  box-shadow: inset 0 0 0 1.5px var(--primary);
+  color: var(--primary-dark);
+}
+
+.custom-datetime-day.selected {
+  background: linear-gradient(135deg, var(--primary) 0%, #0d9488 100%);
+  color: #fff;
+}
+
+.custom-datetime-day.selected:hover {
+  color: #fff;
+}
+
+.custom-datetime-time {
+  display: flex;
+  border-left: 1px solid var(--border);
+  padding: 8px 6px;
+  gap: 4px;
+  max-height: 280px;
+}
+
+.custom-datetime-time-col {
+  width: 48px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+
+.custom-datetime-time-col button {
+  width: 100%;
+  padding: 8px 0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.custom-datetime-time-col button:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.custom-datetime-time-col button.active {
+  background: linear-gradient(135deg, var(--primary) 0%, #0d9488 100%);
+  color: #fff;
+}
+
+.custom-datetime-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.custom-datetime-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.custom-datetime-link:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+@media (max-width: 480px) {
+  .custom-datetime-body {
+    flex-direction: column;
+  }
+
+  .custom-datetime-time {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 140px;
+    justify-content: center;
+  }
+
+  .custom-datetime-panel {
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-width: 0;
+  }
+}
