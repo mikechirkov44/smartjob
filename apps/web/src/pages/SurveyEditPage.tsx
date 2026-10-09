@@ -108,7 +108,7 @@ export function SurveyEditPage() {
         surveyId={id}
         initialForm={form}
         initialQuestions={questions}
-        allowQuestionEdit={form.template === 'CUSTOM'}
+        allowQuestionEdit
         questionsLocked={status !== 'DRAFT'}
         submitLabel="Сохранить"
         onSuccess={(surveyId) => navigate(`/surveys/${surveyId}`)}

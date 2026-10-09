@@ -55,7 +55,7 @@ export class SurveysController {
     return this.service.update(organizationId, id, dto);
   }
 
-  @Roles(OrgRole.ADMIN)
+  @Roles(OrgRole.HR)
   @Delete(':id')
   remove(
     @Param('organizationId') organizationId: string,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
@@ -40,6 +40,7 @@ type Resp = {
 
 export function SurveyDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { token, organizationId } = useAuth();
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [employees, setEmployees] = useState<Emp[]>([]);
@@ -47,6 +48,7 @@ export function SurveyDetailPage() {
   const [responses, setResponses] = useState<Resp[]>([]);
   const [publicUrl, setPublicUrl] = useState('');
   const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     if (!organizationId || !id) return;
@@ -110,6 +112,27 @@ export function SurveyDetailPage() {
     await load();
   };
 
+  const removeSurvey = async () => {
+    if (!organizationId || !id || !survey) return;
+    const ok = window.confirm(
+      `Удалить опрос «${survey.title}» вместе со всеми ответами и ссылками? Это действие нельзя отменить.`,
+    );
+    if (!ok) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await api(`/organizations/${organizationId}/surveys/${id}`, {
+        token,
+        organizationId,
+        method: 'DELETE',
+      });
+      navigate('/surveys');
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Не удалось удалить');
+      setDeleting(false);
+    }
+  };
+
   if (!survey) {
     return (
       <div className="card page-enter">
@@ -125,6 +148,7 @@ export function SurveyDetailPage() {
       <Link to="/surveys" className="muted">
         ← К опросам
       </Link>
+      {error && <div className="error">{error}</div>}
       <div className="card detail-hero">
         <img src={coverSrc(survey.coverImage)} alt="" />
         <div className="detail-hero-body">
@@ -158,6 +182,13 @@ export function SurveyDetailPage() {
               Закрыть
             </button>
           )}
+          <button
+            className="btn btn-danger"
+            disabled={deleting}
+            onClick={() => void removeSurvey()}
+          >
+            {deleting ? 'Удаление…' : 'Удалить'}
+          </button>
         </div>
       </div>
 
@@ -246,7 +277,18 @@ export function SurveyDetailPage() {
       </div>
 
       <div className="card">
-        <h3 style={{ marginBottom: 10 }}>Вопросы ({survey.questions.length})</h3>
+        <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
+          <h3 style={{ margin: 0 }}>Вопросы ({survey.questions.length})</h3>
+          <Link className="btn btn-secondary btn-sm" to={`/surveys/${survey.id}/edit`}>
+            {survey.status === 'DRAFT' ? 'Изменить вопросы' : 'Открыть редактор'}
+          </Link>
+        </div>
+        {survey.status !== 'DRAFT' && (
+          <p className="muted" style={{ marginBottom: 10 }}>
+            Состав вопросов меняется только в черновике. Сейчас можно править название, описание,
+            обложку и дату закрытия.
+          </p>
+        )}
         <ol style={{ paddingLeft: 18 }}>
           {survey.questions.map((q) => (
             <li key={q.id} style={{ marginBottom: 8 }}>

@@ -120,7 +120,7 @@ export function SurveyEditor({
         return;
       }
 
-      if (allowQuestionEdit && !questionsLocked && form.template === 'CUSTOM') {
+      if (allowQuestionEdit && !questionsLocked) {
         body.questions = questions.filter((q) => q.text.trim()).map(toApiQuestion);
       }
       await api(`/organizations/${organizationId}/surveys/${surveyId}`, {
@@ -279,7 +279,7 @@ export function SurveyEditor({
         />
       </div>
 
-      {form.template === 'CUSTOM' && allowQuestionEdit && (
+      {allowQuestionEdit && (mode === 'edit' || form.template === 'CUSTOM') && (
         <div className="survey-editor-section">
           <h3 className="survey-editor-section-title">Конструктор вопросов</h3>
           <p className="survey-editor-section-sub">
