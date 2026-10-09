@@ -51,6 +51,8 @@ export function SurveyDetailPage() {
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmDraft, setConfirmDraft] = useState(false);
+  const [statusBusy, setStatusBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const load = async () => {
@@ -84,13 +86,31 @@ export function SurveyDetailPage() {
   }, [token, organizationId, id]);
 
   const setStatus = async (status: string) => {
-    await api(`/organizations/${organizationId}/surveys/${id}`, {
-      token,
-      organizationId,
-      method: 'PATCH',
-      body: { status },
-    });
-    await load();
+    setStatusBusy(true);
+    setError('');
+    try {
+      await api(`/organizations/${organizationId}/surveys/${id}`, {
+        token,
+        organizationId,
+        method: 'PATCH',
+        body: { status },
+      });
+      setConfirmDraft(false);
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Не удалось изменить статус');
+    } finally {
+      setStatusBusy(false);
+    }
+  };
+
+  const requestReturnToDraft = () => {
+    if (!survey) return;
+    if (survey._count.responses > 0 || survey.status === 'ACTIVE') {
+      setConfirmDraft(true);
+      return;
+    }
+    void setStatus('DRAFT');
   };
 
   const toggleIdentify = async (value: boolean) => {
@@ -179,14 +199,40 @@ export function SurveyDetailPage() {
           <Link className="btn btn-secondary" to={`/surveys/${survey.id}/edit`}>
             Редактировать
           </Link>
-          {survey.status !== 'ACTIVE' && (
-            <button className="btn btn-primary" onClick={() => void setStatus('ACTIVE')}>
+          {survey.status === 'DRAFT' && (
+            <button
+              className="btn btn-primary"
+              disabled={statusBusy}
+              onClick={() => void setStatus('ACTIVE')}
+            >
               Открыть
             </button>
           )}
           {survey.status === 'ACTIVE' && (
-            <button className="btn btn-secondary" onClick={() => void setStatus('CLOSED')}>
+            <button
+              className="btn btn-secondary"
+              disabled={statusBusy}
+              onClick={() => void setStatus('CLOSED')}
+            >
               Закрыть
+            </button>
+          )}
+          {survey.status === 'CLOSED' && (
+            <button
+              className="btn btn-primary"
+              disabled={statusBusy}
+              onClick={() => void setStatus('ACTIVE')}
+            >
+              Снова открыть
+            </button>
+          )}
+          {survey.status !== 'DRAFT' && (
+            <button
+              className="btn btn-secondary"
+              disabled={statusBusy}
+              onClick={requestReturnToDraft}
+            >
+              Вернуть в черновик
             </button>
           )}
           <button
@@ -351,6 +397,23 @@ export function SurveyDetailPage() {
           if (!deleting) setConfirmDelete(false);
         }}
         onConfirm={() => void removeSurvey()}
+      />
+
+      <ConfirmDialog
+        open={confirmDraft}
+        busy={statusBusy}
+        title="Вернуть в черновик?"
+        message={
+          survey._count.responses > 0
+            ? `Опрос станет черновиком, публичная ссылка перестанет принимать ответы. Уже собрано ответов: ${survey._count.responses}. После правок вопросов аналитика по старым ответам может стать неполной. Продолжить?`
+            : 'Опрос станет черновиком: ссылка перестанет принимать ответы, вопросы снова можно будет редактировать.'
+        }
+        confirmLabel="В черновик"
+        cancelLabel="Отмена"
+        onCancel={() => {
+          if (!statusBusy) setConfirmDraft(false);
+        }}
+        onConfirm={() => void setStatus('DRAFT')}
       />
     </div>
   );

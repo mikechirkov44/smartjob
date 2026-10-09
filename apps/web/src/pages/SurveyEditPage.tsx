@@ -8,6 +8,7 @@ import {
   emptyQuestion,
   kindFromApi,
 } from '../questionOptions';
+import { statusLabel } from '../statusLabels';
 
 type SurveyPayload = {
   id: string;
@@ -98,9 +99,10 @@ export function SurveyEditPage() {
       <div>
         <h1 className="page-title">Редактирование опроса</h1>
         <p className="page-sub">
+          Статус: <strong>{statusLabel(status)}</strong>.{' '}
           {status === 'DRAFT'
-            ? 'Черновик: можно менять вопросы и настройки.'
-            : 'Опрос не в черновике: вопросы заблокированы, остальные поля доступны.'}
+            ? 'Можно менять вопросы и настройки.'
+            : 'Вопросы заблокированы. Чтобы править состав — на карточке опроса нажмите «Вернуть в черновик».'}
         </p>
       </div>
       <SurveyEditor
