@@ -177,71 +177,75 @@ export function SurveyDetailPage() {
       </Link>
       {error && <div className="error">{error}</div>}
       <div className="card detail-hero">
-        <img src={coverSrc(survey.coverImage)} alt="" />
-        <div className="detail-hero-body">
-          <h1 className="page-title" style={{ marginBottom: 8 }}>
-            {survey.title}
-          </h1>
-          <div className="row">
-            <span className={`badge ${statusBadgeClass(survey.status)}`}>
-              {statusLabel(survey.status)}
-            </span>
-            <span className="badge muted">{survey.template}</span>
-            <span className="muted">ответов: {survey._count.responses}</span>
+        <img
+          className="detail-hero-cover"
+          src={coverSrc(survey.coverImage)}
+          alt=""
+        />
+        <div className="detail-hero-content">
+          <div className="detail-hero-body">
+            <h1 className="detail-hero-title">{survey.title}</h1>
+            <div className="detail-hero-meta">
+              <span className={`badge ${statusBadgeClass(survey.status)}`}>
+                {statusLabel(survey.status)}
+              </span>
+              <span className="badge muted">{survey.template}</span>
+              <span className="muted">ответов: {survey._count.responses}</span>
+            </div>
+            {survey.description && (
+              <p className="detail-hero-desc">{survey.description}</p>
+            )}
           </div>
-          {survey.description && (
-            <p className="muted" style={{ marginTop: 10 }}>
-              {survey.description}
-            </p>
-          )}
-        </div>
-        <div className="detail-hero-actions row">
-          <Link className="btn btn-secondary" to={`/surveys/${survey.id}/edit`}>
-            Редактировать
-          </Link>
-          {survey.status === 'DRAFT' && (
+          <div className="detail-hero-toolbar">
+            <div className="detail-hero-actions">
+              {survey.status === 'DRAFT' && (
+                <button
+                  className="btn btn-primary"
+                  disabled={statusBusy}
+                  onClick={() => void setStatus('ACTIVE')}
+                >
+                  Открыть
+                </button>
+              )}
+              {survey.status === 'ACTIVE' && (
+                <button
+                  className="btn btn-primary"
+                  disabled={statusBusy}
+                  onClick={() => void setStatus('CLOSED')}
+                >
+                  Закрыть
+                </button>
+              )}
+              {survey.status === 'CLOSED' && (
+                <button
+                  className="btn btn-primary"
+                  disabled={statusBusy}
+                  onClick={() => void setStatus('ACTIVE')}
+                >
+                  Снова открыть
+                </button>
+              )}
+              <Link className="btn btn-secondary" to={`/surveys/${survey.id}/edit`}>
+                Редактировать
+              </Link>
+              {survey.status !== 'DRAFT' && (
+                <button
+                  className="btn btn-secondary"
+                  disabled={statusBusy}
+                  onClick={requestReturnToDraft}
+                >
+                  Вернуть в черновик
+                </button>
+              )}
+            </div>
             <button
-              className="btn btn-primary"
-              disabled={statusBusy}
-              onClick={() => void setStatus('ACTIVE')}
+              className="btn btn-danger"
+              disabled={deleting}
+              onClick={() => setConfirmDelete(true)}
             >
-              Открыть
+              Удалить
             </button>
-          )}
-          {survey.status === 'ACTIVE' && (
-            <button
-              className="btn btn-secondary"
-              disabled={statusBusy}
-              onClick={() => void setStatus('CLOSED')}
-            >
-              Закрыть
-            </button>
-          )}
-          {survey.status === 'CLOSED' && (
-            <button
-              className="btn btn-primary"
-              disabled={statusBusy}
-              onClick={() => void setStatus('ACTIVE')}
-            >
-              Снова открыть
-            </button>
-          )}
-          {survey.status !== 'DRAFT' && (
-            <button
-              className="btn btn-secondary"
-              disabled={statusBusy}
-              onClick={requestReturnToDraft}
-            >
-              Вернуть в черновик
-            </button>
-          )}
-          <button
-            className="btn btn-danger"
-            disabled={deleting}
-            onClick={() => setConfirmDelete(true)}
-          >
-            Удалить
-          </button>
+          </div>
         </div>
       </div>
 

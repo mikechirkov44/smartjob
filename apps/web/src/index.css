@@ -628,35 +628,80 @@ button {
 }
 
 .detail-hero {
-  display: grid;
-  grid-template-columns: minmax(180px, 280px) 1fr auto;
-  gap: 20px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   padding: 0;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse 70% 80% at 100% 0%, rgba(15, 118, 110, 0.08), transparent 50%),
-    #fff;
+  background: #fff;
 }
 
-.detail-hero img {
+.detail-hero-cover {
   width: 100%;
-  height: 100%;
-  min-height: 160px;
+  height: 160px;
   object-fit: cover;
   display: block;
+  background: var(--primary-light);
+}
+
+.detail-hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 22px 20px;
 }
 
 .detail-hero-body {
-  padding: 22px 8px 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.detail-hero-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.6vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.detail-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-hero-desc {
+  margin: 0;
+  max-width: 72ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.detail-hero-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
 
 .detail-hero-actions {
-  padding-right: 22px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: flex-end;
+  align-items: center;
+}
+
+.detail-hero-toolbar .btn {
+  white-space: nowrap;
 }
 
 @keyframes fade {
@@ -721,17 +766,22 @@ button {
     grid-template-columns: 1fr 1fr;
   }
 
-  .detail-hero {
-    grid-template-columns: 1fr;
+  .detail-hero-cover {
+    height: 132px;
   }
 
-  .detail-hero-body,
+  .detail-hero-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .detail-hero-actions {
-    padding: 0 18px 18px;
+    width: 100%;
   }
 
-  .detail-hero img {
-    min-height: 140px;
+  .detail-hero-toolbar .btn {
+    flex: 1 1 auto;
+    justify-content: center;
   }
 }
 
