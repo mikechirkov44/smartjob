@@ -11,6 +11,8 @@ type Question = {
   category?: string;
   type: 'LIKERT' | 'ENPS' | 'TEXT';
   scaleMax?: number;
+  scaleMinLabel?: string | null;
+  scaleMaxLabel?: string | null;
 };
 
 type AnswerValue = { valueInt?: number; valueText?: string };
@@ -180,14 +182,24 @@ export function PublicSurveyPage() {
             ? 'importance'
             : '';
 
-  const hint =
+  const defaultMinLabel =
     current?.type === 'ENPS'
-      ? '0 — точно нет, 10 — обязательно да'
-      : current?.type === 'TEXT'
-        ? 'Введите ответ своими словами'
-        : scaleMax === 10
-          ? '1 — минимально, 10 — максимально'
-          : '1 — совершенно не согласен, 5 — полностью согласен';
+      ? 'точно нет'
+      : scaleMax === 10
+        ? 'минимально'
+        : 'совершенно не согласен';
+  const defaultMaxLabel =
+    current?.type === 'ENPS'
+      ? 'обязательно да'
+      : scaleMax === 10
+        ? 'максимально'
+        : 'полностью согласен';
+  const minLabel = current?.scaleMinLabel?.trim() || defaultMinLabel;
+  const maxLabel = current?.scaleMaxLabel?.trim() || defaultMaxLabel;
+  const hint =
+    current?.type === 'TEXT'
+      ? 'Введите ответ своими словами'
+      : `${min} — ${minLabel}, ${scaleMax} — ${maxLabel}`;
 
   return (
     <div className="public-wrap">
@@ -233,20 +245,26 @@ export function PublicSurveyPage() {
             </button>
           </form>
         ) : (
-          <div
-            className={`scale ${scaleMax >= 10 ? 'scale-10' : ''} ${current?.type === 'ENPS' ? 'enps' : ''}`}
-          >
-            {options.map((n) => (
-              <button
-                key={n}
-                type="button"
-                disabled={busy}
-                className={answers[current.id]?.valueInt === n ? 'active' : ''}
-                onClick={() => void choose(n)}
-              >
-                {n}
-              </button>
-            ))}
+          <div className="scale-wrap">
+            <div
+              className={`scale ${scaleMax >= 10 ? 'scale-10' : ''} ${current?.type === 'ENPS' ? 'enps' : ''}`}
+            >
+              {options.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  disabled={busy}
+                  className={answers[current.id]?.valueInt === n ? 'active' : ''}
+                  onClick={() => void choose(n)}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <div className="scale-ends">
+              <span>{minLabel}</span>
+              <span>{maxLabel}</span>
+            </div>
           </div>
         )}
 

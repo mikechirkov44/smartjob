@@ -28,6 +28,9 @@ services:
       PORT: 3000
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:80}
       PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -49,3 +52,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

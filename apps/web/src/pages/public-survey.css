@@ -222,6 +222,25 @@
   box-shadow: var(--shadow-sm);
 }
 
+.scale-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scale-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.scale-ends span:last-child {
+  text-align: right;
+}
+
 .nav-row {
   display: flex;
   justify-content: space-between;

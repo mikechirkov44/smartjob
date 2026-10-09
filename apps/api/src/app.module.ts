@@ -11,6 +11,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PublicModule } from './public/public.module';
 import { SurveysModule } from './surveys/surveys.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SurveysModule } from './surveys/surveys.module';
     SurveysModule,
     PublicModule,
     AnalyticsModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [

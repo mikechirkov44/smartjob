@@ -11,6 +11,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
 import { SurveyCreatePage } from './pages/SurveyCreatePage';
 import { SurveyDetailPage } from './pages/SurveyDetailPage';
+import { SurveyEditPage } from './pages/SurveyEditPage';
 import { SurveysPage } from './pages/SurveysPage';
 
 function Protected({ children }: { children: React.ReactNode }) {
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/super" element={<SuperAdminPage />} />
         <Route path="/surveys" element={<SurveysPage />} />
         <Route path="/surveys/new" element={<SurveyCreatePage />} />
+        <Route path="/surveys/:id/edit" element={<SurveyEditPage />} />
         <Route path="/surveys/:id" element={<SurveyDetailPage />} />
         <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/departments" element={<DepartmentsPage />} />

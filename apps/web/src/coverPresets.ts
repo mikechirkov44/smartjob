@@ -4,6 +4,8 @@ export type CoverPreset = {
   src: string;
 };
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
 export const COVER_PRESETS: CoverPreset[] = [
   {
     id: 'team-collab',
@@ -47,6 +49,13 @@ export const COVER_PRESETS: CoverPreset[] = [
   },
 ];
 
+export function isUploadedCover(id?: string | null) {
+  return Boolean(id && id.startsWith('uploads/'));
+}
+
 export function coverSrc(id?: string | null) {
+  if (isUploadedCover(id)) {
+    return `${API_URL}/${id}`;
+  }
   return COVER_PRESETS.find((p) => p.id === id)?.src || COVER_PRESETS[0].src;
 }

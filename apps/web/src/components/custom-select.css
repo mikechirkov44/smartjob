@@ -77,3 +77,9 @@
   flex: 1;
   min-width: 160px;
 }
+
+.custom-select.disabled .custom-select-trigger {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: #f8fafc;
+}

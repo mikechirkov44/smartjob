@@ -3,11 +3,14 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -20,10 +23,12 @@ export class CustomQuestionDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(120)
   metric?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(120)
   category?: string;
 
   @IsOptional()
@@ -31,6 +36,23 @@ export class CustomQuestionDto {
   type?: QuestionType;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsIn([5, 10])
+  scaleMax?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  scaleMinLabel?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  scaleMaxLabel?: string;
+
+  @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   sortOrder?: number;
@@ -98,6 +120,7 @@ export class UpdateSurveyDto {
   adminCanIdentifyRespondents?: boolean;
 
   @IsOptional()
+  @ValidateIf((_, value) => value !== null)
   @IsDateString()
   closesAt?: string | null;
 

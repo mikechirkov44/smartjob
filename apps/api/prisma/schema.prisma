@@ -135,16 +135,18 @@ model Survey {
 }
 
 model SurveyQuestion {
-  id        String       @id @default(cuid())
-  surveyId  String
-  sortOrder Int
-  type      QuestionType @default(LIKERT)
-  scaleMax  Int          @default(5)
-  metric    String?
-  category  String?
-  text      String
-  survey    Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  answers   Answer[]
+  id            String       @id @default(cuid())
+  surveyId      String
+  sortOrder     Int
+  type          QuestionType @default(LIKERT)
+  scaleMax      Int          @default(5)
+  scaleMinLabel String?
+  scaleMaxLabel String?
+  metric        String?
+  category      String?
+  text          String
+  survey        Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers       Answer[]
 
   @@index([surveyId])
 }

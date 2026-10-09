@@ -71,6 +71,8 @@ export class PublicService {
           category: q.category,
           type: q.type,
           scaleMax: q.scaleMax,
+          scaleMinLabel: q.scaleMinLabel,
+          scaleMaxLabel: q.scaleMaxLabel,
           sortOrder: q.sortOrder,
         })),
       },

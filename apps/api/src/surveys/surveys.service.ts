@@ -66,13 +66,20 @@ export class SurveysService {
           'Для своего опроса нужны вопросы',
         );
       }
-      const questions: TemplateQuestion[] = custom.map((q) => ({
-        text: q.text,
-        metric: q.metric || 'Общее',
-        category: q.category || 'custom',
-        type: mapQuestionType(q.type),
-        scaleMax: q.type === QuestionType.ENPS ? 10 : 5,
-      }));
+      const questions: TemplateQuestion[] = custom.map((q) => {
+        const type = mapQuestionType(q.type);
+        const scaleMax =
+          type === 'ENPS' ? 10 : type === 'TEXT' ? 5 : q.scaleMax === 10 ? 10 : 5;
+        return {
+          text: q.text,
+          metric: q.metric || 'Общее',
+          category: q.category || 'custom',
+          type,
+          scaleMax,
+          scaleMinLabel: q.scaleMinLabel?.trim() || undefined,
+          scaleMaxLabel: q.scaleMaxLabel?.trim() || undefined,
+        };
+      });
       if (includeEnps && !questions.some((q) => q.type === 'ENPS')) {
         questions.push(ENPS_QUESTION);
       }
@@ -158,6 +165,8 @@ export class SurveysService {
               category: q.category,
               type: this.toQuestionType(q.type),
               scaleMax: this.toScaleMax(q),
+              scaleMinLabel: q.scaleMinLabel || null,
+              scaleMaxLabel: q.scaleMaxLabel || null,
             })),
           },
         },
@@ -231,6 +240,8 @@ export class SurveysService {
             category: q.category,
             type: this.toQuestionType(q.type),
             scaleMax: this.toScaleMax(q),
+            scaleMinLabel: q.scaleMinLabel || null,
+            scaleMaxLabel: q.scaleMaxLabel || null,
           })),
         });
       }

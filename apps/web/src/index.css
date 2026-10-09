@@ -333,6 +333,22 @@ button {
   transform: scale(1.04);
 }
 
+.cover-option.upload {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.cover-option.upload .cover-upload-placeholder {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  font-size: 36px;
+  font-weight: 300;
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -538,6 +554,9 @@ button {
   align-items: center;
   padding: 0;
   overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 80% at 100% 0%, rgba(15, 118, 110, 0.08), transparent 50%),
+    #fff;
 }
 
 .detail-hero img {
@@ -554,6 +573,10 @@ button {
 
 .detail-hero-actions {
   padding-right: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 @keyframes fade {

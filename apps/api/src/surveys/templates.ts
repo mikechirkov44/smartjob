@@ -4,6 +4,8 @@ export type TemplateQuestion = {
   text: string;
   type?: 'LIKERT' | 'ENPS' | 'TEXT';
   scaleMax?: number;
+  scaleMinLabel?: string;
+  scaleMaxLabel?: string;
 };
 
 export const FULL_TEMPLATE: TemplateQuestion[] = [

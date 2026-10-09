@@ -61,3 +61,40 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   }
   return data as T;
 }
+
+type UploadOptions = {
+  token?: string | null;
+  organizationId?: string | null;
+};
+
+export async function uploadFile<T>(
+  path: string,
+  file: File,
+  options: UploadOptions = {},
+): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (options.token) {
+    headers.Authorization = `Bearer ${options.token}`;
+  }
+  if (options.organizationId) {
+    headers['X-Organization-Id'] = options.organizationId;
+  }
+  const body = new FormData();
+  body.append('file', file);
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const message =
+      (data as { message?: string | string[] }).message ||
+      'Ошибка загрузки';
+    throw new ApiError(
+      res.status,
+      Array.isArray(message) ? message.join(', ') : String(message),
+    );
+  }
+  return data as T;
+}

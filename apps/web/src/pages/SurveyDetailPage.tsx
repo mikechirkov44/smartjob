@@ -145,6 +145,9 @@ export function SurveyDetailPage() {
           )}
         </div>
         <div className="detail-hero-actions row">
+          <Link className="btn btn-secondary" to={`/surveys/${survey.id}/edit`}>
+            Редактировать
+          </Link>
           {survey.status !== 'ACTIVE' && (
             <button className="btn btn-primary" onClick={() => void setStatus('ACTIVE')}>
               Открыть

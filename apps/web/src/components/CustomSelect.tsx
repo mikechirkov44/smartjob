@@ -13,6 +13,7 @@ type Props = {
   placeholder?: string;
   className?: string;
   ariaLabel?: string;
+  disabled?: boolean;
 };
 
 export function CustomSelect({
@@ -22,6 +23,7 @@ export function CustomSelect({
   placeholder = 'Выберите',
   className = '',
   ariaLabel,
+  disabled = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -37,7 +39,7 @@ export function CustomSelect({
 
   return (
     <div
-      className={`custom-select ${open ? 'open' : ''} ${className}`}
+      className={`custom-select ${open ? 'open' : ''} ${disabled ? 'disabled' : ''} ${className}`}
       ref={ref}
     >
       <button
@@ -45,7 +47,10 @@ export function CustomSelect({
         className="custom-select-trigger"
         aria-label={ariaLabel || placeholder}
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) setOpen((v) => !v);
+        }}
       >
         <span>{label}</span>
         <span className="custom-select-caret" aria-hidden>
