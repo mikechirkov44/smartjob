@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CustomCheckbox } from '../components/CustomCheckbox';
 import { coverSrc } from '../coverPresets';
 import { statusBadgeClass, statusLabel } from '../statusLabels';
@@ -49,6 +50,8 @@ export function SurveyDetailPage() {
   const [publicUrl, setPublicUrl] = useState('');
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const load = async () => {
     if (!organizationId || !id) return;
@@ -112,12 +115,15 @@ export function SurveyDetailPage() {
     await load();
   };
 
+  const copyLink = async () => {
+    if (!publicUrl) return;
+    await navigator.clipboard.writeText(publicUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+
   const removeSurvey = async () => {
     if (!organizationId || !id || !survey) return;
-    const ok = window.confirm(
-      `Удалить опрос «${survey.title}» вместе со всеми ответами и ссылками? Это действие нельзя отменить.`,
-    );
-    if (!ok) return;
     setDeleting(true);
     setError('');
     try {
@@ -130,6 +136,7 @@ export function SurveyDetailPage() {
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Не удалось удалить');
       setDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -185,9 +192,9 @@ export function SurveyDetailPage() {
           <button
             className="btn btn-danger"
             disabled={deleting}
-            onClick={() => void removeSurvey()}
+            onClick={() => setConfirmDelete(true)}
           >
-            {deleting ? 'Удаление…' : 'Удалить'}
+            Удалить
           </button>
         </div>
       </div>
@@ -196,14 +203,20 @@ export function SurveyDetailPage() {
         <div className="card stack">
           <h3>Публичная ссылка и QR</h3>
           <p className="muted">Общая ссылка — ответы без личности даже для админа.</p>
-          <input readOnly value={publicUrl} onFocus={(e) => e.target.select()} />
-          <div className="row">
+          <div className="link-box">
+            <div className="link-box-url" title={publicUrl}>
+              {publicUrl || '—'}
+            </div>
             <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => void navigator.clipboard.writeText(publicUrl)}
+              type="button"
+              className={`link-box-copy ${copied ? 'copied' : ''}`}
+              onClick={() => void copyLink()}
+              disabled={!publicUrl}
             >
-              Копировать
+              {copied ? 'Скопировано' : 'Копировать'}
             </button>
+          </div>
+          <div className="link-box-actions">
             <a className="btn btn-primary btn-sm" href={publicUrl} target="_blank" rel="noreferrer">
               Открыть
             </a>
@@ -325,6 +338,20 @@ export function SurveyDetailPage() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        danger
+        busy={deleting}
+        title="Удалить опрос?"
+        message={`Удалить опрос «${survey.title}» вместе со всеми ответами и ссылками? Это действие нельзя отменить.`}
+        confirmLabel="Удалить"
+        cancelLabel="Отмена"
+        onCancel={() => {
+          if (!deleting) setConfirmDelete(false);
+        }}
+        onConfirm={() => void removeSurvey()}
+      />
     </div>
   );
 }
