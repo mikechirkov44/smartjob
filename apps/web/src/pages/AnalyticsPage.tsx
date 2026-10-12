@@ -185,16 +185,16 @@ export function AnalyticsPage() {
 
   return (
     <div className="stack page-enter">
-      <div className="analytics-head">
-        <div className="row" style={{ alignItems: 'flex-start', gap: 20 }}>
-          <div>
-            <h1 className="page-title">Аналитика</h1>
-            <p className="page-sub">
-              Драйверный анализ, регрессия, матрица приоритетов и динамика — на ваших данных
+      <div className="analytics-hero">
+        <div className="analytics-hero-top">
+          <div className="analytics-hero-copy">
+            <h1 className="analytics-hero-title">Аналитика</h1>
+            <p className="analytics-hero-sub">
+              Драйверы, регрессия, приоритеты и динамика — по вашим опросам
             </p>
           </div>
           <img
-            className="page-hero-illust"
+            className="analytics-hero-illust"
             src="/illustrations/analytics.svg"
             alt=""
             aria-hidden="true"
