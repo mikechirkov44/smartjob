@@ -1,6 +1,11 @@
 .custom-select {
   position: relative;
+  z-index: 1;
   min-width: 180px;
+}
+
+.custom-select.open {
+  z-index: 80;
 }
 
 .custom-select-trigger {
@@ -41,7 +46,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--shadow);
-  z-index: 40;
+  z-index: 81;
   overflow: hidden;
   max-height: 260px;
   overflow-y: auto;
