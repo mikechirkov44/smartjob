@@ -122,6 +122,7 @@ model Survey {
   template                    SurveyTemplate
   status                      SurveyStatus   @default(DRAFT)
   includeEnps                 Boolean        @default(true)
+  hideQuestionCategory        Boolean        @default(false)
   adminCanIdentifyRespondents Boolean        @default(false)
   closesAt                    DateTime?
   createdAt                   DateTime       @default(now())

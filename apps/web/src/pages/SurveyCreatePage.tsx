@@ -19,6 +19,7 @@ export function SurveyCreatePage() {
           coverImage: 'team-collab',
           template: 'FULL',
           includeEnps: true,
+          hideQuestionCategory: false,
           adminCanIdentifyRespondents: false,
           closesAt: '',
         }}

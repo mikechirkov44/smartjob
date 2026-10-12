@@ -22,6 +22,7 @@ type SurveyPayload = {
   template: string;
   status: string;
   includeEnps: boolean;
+  hideQuestionCategory?: boolean;
   adminCanIdentifyRespondents: boolean;
   closesAt?: string | null;
   questions: Array<{
@@ -70,6 +71,7 @@ export function SurveyEditPage() {
           coverImage: s.coverImage || 'team-collab',
           template: s.template,
           includeEnps: s.includeEnps,
+          hideQuestionCategory: s.hideQuestionCategory ?? false,
           adminCanIdentifyRespondents: s.adminCanIdentifyRespondents,
           closesAt: toLocalDatetime(s.closesAt),
         });

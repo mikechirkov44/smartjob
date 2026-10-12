@@ -33,6 +33,7 @@ type Payload = {
     title: string;
     description?: string;
     coverImage?: string;
+    hideQuestionCategory?: boolean;
     questions: Question[];
   };
 };
@@ -262,7 +263,9 @@ export function PublicSurveyPage() {
       </div>
 
       <div className="public-card question" key={current?.id}>
-        <div className={`q-tag ${tagClass}`}>{current?.metric || current?.type}</div>
+        {!data.survey.hideQuestionCategory && (
+          <div className={`q-tag ${tagClass}`}>{current?.metric || current?.type}</div>
+        )}
         <h2>{current?.text}</h2>
         <p className="hint">{hint}</p>
 

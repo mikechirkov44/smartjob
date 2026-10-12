@@ -69,6 +69,7 @@ export class PublicService {
         coverImage: survey.coverImage,
         template: survey.template,
         includeEnps: survey.includeEnps,
+        hideQuestionCategory: survey.hideQuestionCategory,
         questions: survey.questions.map((q) => ({
           id: q.id,
           text: q.text,

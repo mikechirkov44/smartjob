@@ -124,6 +124,10 @@ export class CreateSurveyDto {
 
   @IsOptional()
   @IsBoolean()
+  hideQuestionCategory?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   adminCanIdentifyRespondents?: boolean;
 
   @IsOptional()
@@ -158,6 +162,10 @@ export class UpdateSurveyDto {
   @IsOptional()
   @IsBoolean()
   includeEnps?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  hideQuestionCategory?: boolean;
 
   @IsOptional()
   @IsBoolean()

@@ -193,6 +193,7 @@ export class SurveysService {
           coverImage: dto.coverImage || 'team-collab',
           template: dto.template,
           includeEnps,
+          hideQuestionCategory: dto.hideQuestionCategory ?? false,
           adminCanIdentifyRespondents: dto.adminCanIdentifyRespondents ?? false,
           closesAt: dto.closesAt ? new Date(dto.closesAt) : null,
           status: SurveyStatus.DRAFT,
@@ -252,6 +253,7 @@ export class SurveysService {
           coverImage: dto.coverImage,
           status: dto.status,
           includeEnps: dto.includeEnps,
+          hideQuestionCategory: dto.hideQuestionCategory,
           adminCanIdentifyRespondents: dto.adminCanIdentifyRespondents,
           closesAt:
             dto.closesAt === null

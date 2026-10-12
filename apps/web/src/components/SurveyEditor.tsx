@@ -25,6 +25,7 @@ export type SurveyFormState = {
   coverImage: string;
   template: string;
   includeEnps: boolean;
+  hideQuestionCategory: boolean;
   adminCanIdentifyRespondents: boolean;
   closesAt: string;
 };
@@ -143,6 +144,7 @@ export function SurveyEditor({
         description: form.description || undefined,
         coverImage: form.coverImage,
         includeEnps: form.includeEnps,
+        hideQuestionCategory: form.hideQuestionCategory,
         adminCanIdentifyRespondents: form.adminCanIdentifyRespondents,
         closesAt: form.closesAt ? form.closesAt : mode === 'edit' ? null : undefined,
       };
@@ -310,6 +312,15 @@ export function SurveyEditor({
             компании (eNPS).
           </p>
         )}
+        <CustomCheckbox
+          variant="toggle"
+          checked={form.hideQuestionCategory}
+          onChange={(hideQuestionCategory) =>
+            setForm((f) => ({ ...f, hideQuestionCategory }))
+          }
+          label="Скрывать категорию у респондента"
+          description="Над вопросом не будет метки категории/метрики — только текст вопроса."
+        />
         <CustomCheckbox
           variant="toggle"
           checked={form.adminCanIdentifyRespondents}
