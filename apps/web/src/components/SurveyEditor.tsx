@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState } from 'react';
+import { DragEvent, FormEvent, useRef, useState } from 'react';
 import { api, ApiError, uploadFile } from '../api';
 import { useAuth } from '../auth';
 import { COVER_PRESETS, coverSrc, isUploadedCover } from '../coverPresets';
@@ -70,9 +70,48 @@ export function SurveyEditor({
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<SurveyFormState>(initialForm);
   const [questions, setQuestions] = useState<EditorQuestion[]>(initialQuestions);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const updateQuestion = (idx: number, patch: Partial<EditorQuestion>) => {
     setQuestions((list) => list.map((q, i) => (i === idx ? { ...q, ...patch } : q)));
+  };
+
+  const reorderQuestions = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0) return;
+    setQuestions((list) => {
+      const next = [...list];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    });
+  };
+
+  const onQuestionDragStart = (idx: number) => (e: DragEvent) => {
+    if (questionsLocked) return;
+    setDragIndex(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  };
+
+  const onQuestionDragOver = (idx: number) => (e: DragEvent) => {
+    if (questionsLocked || dragIndex == null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== idx) setDragOverIndex(idx);
+  };
+
+  const onQuestionDrop = (idx: number) => (e: DragEvent) => {
+    e.preventDefault();
+    if (questionsLocked || dragIndex == null) return;
+    reorderQuestions(dragIndex, idx);
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const onQuestionDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   const onUploadCover = async (file: File | undefined) => {
@@ -286,7 +325,7 @@ export function SurveyEditor({
         <div className="survey-editor-section">
           <h3 className="survey-editor-section-title">Конструктор вопросов</h3>
           <p className="survey-editor-section-sub">
-            Текст, шкалы и сетка строк×столбцов — как в Google Forms.
+            Текст, шкалы и сетка. Перетащите карточку за ⋮⋮, чтобы изменить порядок.
           </p>
           {questionsLocked && (
             <p className="muted">
@@ -298,8 +337,31 @@ export function SurveyEditor({
             const maxMark = q.kind === 'LIKERT_10' ? '10' : '5';
             const isScale = q.kind === 'LIKERT_5' || q.kind === 'LIKERT_10';
             return (
-              <div className="question-block" key={idx} style={{ animationDelay: `${idx * 0.04}s` }}>
+              <div
+                className={[
+                  'question-block',
+                  dragIndex === idx ? 'dragging' : '',
+                  dragOverIndex === idx && dragIndex !== idx ? 'drag-over' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                key={q.clientKey}
+                onDragOver={onQuestionDragOver(idx)}
+                onDrop={onQuestionDrop(idx)}
+                onDragEnd={onQuestionDragEnd}
+              >
                 <div className="question-block-head">
+                  <button
+                    type="button"
+                    className="question-drag-handle"
+                    draggable={!questionsLocked}
+                    disabled={questionsLocked}
+                    aria-label={`Переместить вопрос ${idx + 1}`}
+                    title="Перетащить"
+                    onDragStart={onQuestionDragStart(idx)}
+                  >
+                    ⋮⋮
+                  </button>
                   <span className="question-num">{idx + 1}</span>
                   <span className="question-kind-chip">{kindLabel(q.kind)}</span>
                 </div>

@@ -142,20 +142,28 @@
 
 .scale {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  margin: 28px 0 18px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  margin: 20px 0 14px;
 }
 
 .scale.enps,
 .scale.scale-10 {
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.scale.scale-10 {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
 }
 
 .scale.scale-10 button,
 .scale.enps button {
-  font-size: 15px;
-  aspect-ratio: 1.1;
+  font-size: 13px;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  min-height: 0;
+  padding: 0;
 }
 
 .q-tag.importance {
@@ -191,11 +199,11 @@
 
 .scale button {
   aspect-ratio: 1;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1.5px solid var(--border);
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 18px;
+  font-size: 15px;
   background: #fff;
   transition: 0.18s var(--ease-out);
   animation: rise 0.35s var(--ease-out) both;
@@ -347,7 +355,20 @@
 @media (max-width: 520px) {
   .scale.enps,
   .scale.scale-10 {
-    grid-template-columns: repeat(5, 1fr);
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .scale.enps button,
+  .scale.scale-10 button {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    aspect-ratio: auto;
+    font-size: 13px;
   }
 
   .public-card {

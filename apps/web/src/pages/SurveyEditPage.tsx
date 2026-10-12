@@ -79,6 +79,7 @@ export function SurveyEditPage() {
             ? editable.map((q) => {
                 const kind = kindFromApi(q.type, q.scaleMax);
                 return {
+                  clientKey: q.id,
                   text: q.text,
                   metric: q.metric || 'Общее',
                   category: q.category || 'custom',

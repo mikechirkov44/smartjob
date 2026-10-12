@@ -200,7 +200,7 @@ export function AnalyticsPage() {
             aria-hidden="true"
           />
         </div>
-        <div className="row">
+        <div className="analytics-toolbar">
           <CustomSelect
             value={surveyId}
             placeholder="Все опросы"

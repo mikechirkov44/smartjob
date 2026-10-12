@@ -44,6 +44,7 @@ export const CATEGORY_OPTIONS: SelectOption[] = [
 ];
 
 export type EditorQuestion = {
+  clientKey: string;
   text: string;
   metric: string;
   category: string;
@@ -76,6 +77,7 @@ export function defaultGridRows(): GridRow[] {
 
 export function emptyQuestion(): EditorQuestion {
   return {
+    clientKey: uid('q'),
     text: '',
     metric: 'Общее',
     category: 'custom',

@@ -75,9 +75,54 @@
 .question-block-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   margin-bottom: 12px;
+}
+
+.question-block-head .question-kind-chip {
+  margin-left: auto;
+}
+
+.question-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--soft);
+  font-size: 14px;
+  letter-spacing: -2px;
+  cursor: grab;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.question-drag-handle:hover:not(:disabled) {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-color: rgba(15, 118, 110, 0.2);
+}
+
+.question-drag-handle:active:not(:disabled) {
+  cursor: grabbing;
+}
+
+.question-drag-handle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.question-block.dragging {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.question-block.drag-over {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .question-num {
