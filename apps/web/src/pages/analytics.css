@@ -1,77 +1,38 @@
-.analytics-hero {
+.analytics-head {
   display: flex;
-  flex-direction: column;
-  gap: 18px;
-  margin-bottom: 16px;
-  padding: 22px 24px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background:
-    radial-gradient(ellipse 70% 120% at 100% 0%, rgba(15, 118, 110, 0.12), transparent 55%),
-    radial-gradient(ellipse 50% 80% at 0% 100%, rgba(8, 145, 178, 0.08), transparent 50%),
-    #fff;
-  box-shadow: var(--shadow-sm);
-}
-
-.analytics-hero-top {
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
-}
-
-.analytics-hero-copy {
-  min-width: 0;
-}
-
-.analytics-hero-title {
-  margin: 0 0 6px;
-  font-family: var(--font-display);
-  font-size: clamp(26px, 3vw, 34px);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-  line-height: 1.15;
-}
-
-.analytics-hero-sub {
-  margin: 0;
-  max-width: 42ch;
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--muted);
-}
-
-.analytics-hero-illust {
-  width: 120px;
-  height: 88px;
-  object-fit: contain;
-  flex-shrink: 0;
-  filter: drop-shadow(0 8px 16px rgba(15, 118, 110, 0.12));
+  gap: 16px 20px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
 .analytics-toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(15, 118, 110, 0.12);
-  background: rgba(240, 253, 250, 0.85);
-  backdrop-filter: blur(6px);
-  min-height: 44px;
+  flex-shrink: 0;
 }
 
 .analytics-toolbar .custom-select {
-  flex: 1;
-  min-width: 0;
-  max-width: 360px;
+  width: 240px;
+  min-width: 200px;
+  max-width: 280px;
+  flex: none;
 }
 
 .analytics-toolbar .custom-select-trigger {
-  height: 42px;
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  padding: 0 14px;
   box-sizing: border-box;
-  background: #fff;
+  box-shadow: none;
+}
+
+.analytics-toolbar .custom-select-trigger:hover,
+.analytics-toolbar .custom-select.open .custom-select-trigger {
+  box-shadow: none;
 }
 
 .analytics-toolbar .custom-select-trigger span:first-child {
@@ -81,11 +42,14 @@
 }
 
 .analytics-toolbar .btn {
-  height: 42px;
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  padding: 0 18px;
   box-sizing: border-box;
   flex-shrink: 0;
   white-space: nowrap;
-  background: #fff;
+  box-shadow: none;
 }
 
 .analytics-toolbar .custom-select-menu {
@@ -482,24 +446,14 @@
 }
 
 @media (max-width: 900px) {
-  .analytics-hero-top {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .analytics-hero-illust {
-    width: 96px;
-    height: 72px;
-    align-self: flex-end;
-  }
-
   .analytics-toolbar {
     width: 100%;
-    flex-wrap: wrap;
   }
 
   .analytics-toolbar .custom-select {
-    flex: 1 1 180px;
+    flex: 1;
+    width: auto;
+    min-width: 0;
     max-width: none;
   }
 

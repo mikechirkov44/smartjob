@@ -185,20 +185,12 @@ export function AnalyticsPage() {
 
   return (
     <div className="stack page-enter">
-      <div className="analytics-hero">
-        <div className="analytics-hero-top">
-          <div className="analytics-hero-copy">
-            <h1 className="analytics-hero-title">Аналитика</h1>
-            <p className="analytics-hero-sub">
-              Драйверы, регрессия, приоритеты и динамика — по вашим опросам
-            </p>
-          </div>
-          <img
-            className="analytics-hero-illust"
-            src="/illustrations/analytics.svg"
-            alt=""
-            aria-hidden="true"
-          />
+      <div className="analytics-head">
+        <div>
+          <h1 className="page-title">Аналитика</h1>
+          <p className="page-sub">
+            Драйверы, регрессия, приоритеты и динамика — по вашим опросам
+          </p>
         </div>
         <div className="analytics-toolbar">
           <CustomSelect
