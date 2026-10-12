@@ -222,6 +222,88 @@
   box-shadow: var(--shadow-sm);
 }
 
+.grid-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.matrix-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 480px;
+}
+
+.matrix-table th,
+.matrix-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.matrix-table thead th {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: #f8fafc;
+  white-space: nowrap;
+}
+
+.matrix-table tbody th {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  max-width: 220px;
+  padding-left: 14px;
+}
+
+.matrix-corner {
+  min-width: 140px;
+}
+
+.matrix-radio {
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.matrix-radio input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.matrix-radio span {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: #fff;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.matrix-radio input:checked + span {
+  border-color: var(--primary);
+  background: radial-gradient(circle at center, var(--primary) 0 38%, #fff 42%);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.matrix-radio:hover span {
+  border-color: var(--primary);
+}
+
 .scale-wrap {
   display: flex;
   flex-direction: column;

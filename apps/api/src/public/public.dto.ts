@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   Max,
@@ -22,6 +23,11 @@ export class AnswerDto {
   @IsOptional()
   @IsString()
   valueText?: string;
+
+  /** GRID: map rowId -> columnId */
+  @IsOptional()
+  @IsObject()
+  valueJson?: Record<string, string>;
 }
 
 export class SubmitSurveyDto {

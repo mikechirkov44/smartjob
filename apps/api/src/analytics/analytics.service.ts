@@ -1,5 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  isGridColumns,
+  isGridRows,
+  parseGridAnswer,
+} from '../surveys/grid.types';
 import {
   cronbachAlpha,
   mean,
@@ -98,6 +104,39 @@ export class AnalyticsService {
     };
   }
 
+  private pushNormalized(
+    metricBuckets: Map<string, number[]>,
+    byCategory: {
+      engagement: number[];
+      loyalty: number[];
+      satisfaction: number[];
+    },
+    metric: string,
+    category: string | null | undefined,
+    value: number,
+    scaleMax: number,
+  ) {
+    if (value < 1 || value > scaleMax) return;
+    const normalized =
+      scaleMax === 10 ? 1 + ((value - 1) / 9) * 4 : value;
+    const list = metricBuckets.get(metric) || [];
+    list.push(normalized);
+    metricBuckets.set(metric, list);
+
+    const cat = (category || '').toLowerCase();
+    if (cat === 'engagement' || cat === 'pulse') {
+      byCategory.engagement.push(normalized);
+    } else if (cat === 'loyalty') {
+      byCategory.loyalty.push(normalized);
+    } else if (cat === 'satisfaction') {
+      byCategory.satisfaction.push(normalized);
+    } else if (cat === 'importance' || cat === 'profile' || cat === 'open') {
+      // skip category indexes
+    } else {
+      byCategory.engagement.push(normalized);
+    }
+  }
+
   private buildRows(
     surveys: Array<{
       questions: Array<{
@@ -106,6 +145,8 @@ export class AnalyticsService {
         category: string | null;
         type: string;
         scaleMax: number;
+        gridRows?: Prisma.JsonValue | null;
+        gridColumns?: Prisma.JsonValue | null;
       }>;
       responses: Array<{
         id: string;
@@ -113,7 +154,11 @@ export class AnalyticsService {
         departmentName: string | null;
         grade: string | null;
         enps: number | null;
-        answers: Array<{ questionId: string; valueInt: number | null }>;
+        answers: Array<{
+          questionId: string;
+          valueInt: number | null;
+          valueJson?: Prisma.JsonValue | null;
+        }>;
       }>;
     }>,
   ): AnalyticRow[] {
@@ -132,33 +177,47 @@ export class AnalyticsService {
         for (const answer of response.answers) {
           const q = qMap.get(answer.questionId);
           if (!q || q.type === 'ENPS' || q.type === 'TEXT') continue;
+
+          if (q.type === 'GRID') {
+            if (!isGridRows(q.gridRows) || !isGridColumns(q.gridColumns)) continue;
+            const gridAnswer = parseGridAnswer(answer.valueJson);
+            if (!gridAnswer) continue;
+            const colById = new Map(q.gridColumns.map((c) => [c.id, c]));
+            for (const row of q.gridRows) {
+              const colId = gridAnswer[row.id];
+              if (!colId) continue;
+              const col = colById.get(colId);
+              if (!col || col.value == null) continue;
+              const scaleMax = Math.max(
+                5,
+                ...q.gridColumns
+                  .map((c) => c.value)
+                  .filter((v): v is number => typeof v === 'number'),
+              );
+              this.pushNormalized(
+                metricBuckets,
+                byCategory,
+                row.label || q.metric || 'Общее',
+                q.category,
+                col.value,
+                scaleMax <= 5 ? 5 : 10,
+              );
+            }
+            continue;
+          }
+
           if (answer.valueInt == null || answer.valueInt < 1 || answer.valueInt > 10) {
             continue;
           }
           const scaleMax = q.scaleMax === 10 ? 10 : 5;
-          if (answer.valueInt > scaleMax) continue;
-          // Нормализуем шкалу 1–10 к 1–5 для сопоставимости индексов.
-          const normalized =
-            scaleMax === 10
-              ? 1 + ((answer.valueInt - 1) / 9) * 4
-              : answer.valueInt;
-          const metric = q.metric || 'Общее';
-          const list = metricBuckets.get(metric) || [];
-          list.push(normalized);
-          metricBuckets.set(metric, list);
-
-          const cat = (q.category || '').toLowerCase();
-          if (cat === 'engagement' || cat === 'pulse') {
-            byCategory.engagement.push(normalized);
-          } else if (cat === 'loyalty') {
-            byCategory.loyalty.push(normalized);
-          } else if (cat === 'satisfaction') {
-            byCategory.satisfaction.push(normalized);
-          } else if (cat === 'importance' || cat === 'profile' || cat === 'open') {
-            // skip category indexes
-          } else {
-            byCategory.engagement.push(normalized);
-          }
+          this.pushNormalized(
+            metricBuckets,
+            byCategory,
+            q.metric || 'Общее',
+            q.category,
+            answer.valueInt,
+            scaleMax,
+          );
         }
 
         const metrics: Record<string, number> = {};

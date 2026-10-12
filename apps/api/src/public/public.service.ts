@@ -5,6 +5,11 @@ import {
 } from '@nestjs/common';
 import { QuestionType, SurveyStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  isGridColumns,
+  isGridRows,
+  parseGridAnswer,
+} from '../surveys/grid.types';
 import { SubmitSurveyDto } from './public.dto';
 
 @Injectable()
@@ -73,6 +78,9 @@ export class PublicService {
           scaleMax: q.scaleMax,
           scaleMinLabel: q.scaleMinLabel,
           scaleMaxLabel: q.scaleMaxLabel,
+          gridRows: q.gridRows,
+          gridColumns: q.gridColumns,
+          requireAllRows: q.requireAllRows,
           sortOrder: q.sortOrder,
         })),
       },
@@ -140,6 +148,36 @@ export class PublicService {
           throw new BadRequestException('eNPS должен быть от 0 до 10');
         }
       }
+      if (question.type === QuestionType.GRID) {
+        if (!isGridRows(question.gridRows) || !isGridColumns(question.gridColumns)) {
+          throw new BadRequestException('Сетка настроена некорректно');
+        }
+        const gridAnswer = parseGridAnswer(answer.valueJson);
+        if (!gridAnswer) {
+          throw new BadRequestException('Ответ по сетке обязателен');
+        }
+        const colIds = new Set(question.gridColumns.map((c) => c.id));
+        for (const row of question.gridRows) {
+          const picked = gridAnswer[row.id];
+          if (!picked) {
+            if (question.requireAllRows) {
+              throw new BadRequestException(
+                'Отметьте ответ в каждой строке сетки',
+              );
+            }
+            continue;
+          }
+          if (!colIds.has(picked)) {
+            throw new BadRequestException('Некорректный столбец в ответе сетки');
+          }
+        }
+        if (
+          !question.requireAllRows &&
+          Object.keys(gridAnswer).length === 0
+        ) {
+          throw new BadRequestException('Отметьте хотя бы одну строку сетки');
+        }
+      }
     }
 
     const enpsAnswer = dto.answers.find((a) => {
@@ -161,6 +199,7 @@ export class PublicService {
             questionId: a.questionId,
             valueInt: a.valueInt,
             valueText: a.valueText,
+            valueJson: a.valueJson ?? undefined,
           })),
         },
       },

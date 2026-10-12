@@ -1,11 +1,16 @@
+import type { GridColumn, GridRow } from './grid.types';
+
 export type TemplateQuestion = {
   metric: string;
   category?: string;
   text: string;
-  type?: 'LIKERT' | 'ENPS' | 'TEXT';
+  type?: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID';
   scaleMax?: number;
   scaleMinLabel?: string;
   scaleMaxLabel?: string;
+  gridRows?: GridRow[];
+  gridColumns?: GridColumn[];
+  requireAllRows?: boolean;
 };
 
 export const FULL_TEMPLATE: TemplateQuestion[] = [
@@ -189,8 +194,9 @@ export const ENPS_QUESTION: TemplateQuestion = {
 
 export function mapQuestionType(
   type?: TemplateQuestion['type'] | string | null,
-): 'LIKERT' | 'ENPS' | 'TEXT' {
+): 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' {
   if (type === 'ENPS') return 'ENPS';
   if (type === 'TEXT') return 'TEXT';
+  if (type === 'GRID') return 'GRID';
   return 'LIKERT';
 }

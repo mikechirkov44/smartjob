@@ -4,9 +4,12 @@ import { useAuth } from '../auth';
 import { COVER_PRESETS, coverSrc, isUploadedCover } from '../coverPresets';
 import {
   CATEGORY_OPTIONS,
+  defaultGridColumns,
+  defaultGridRows,
   EditorQuestion,
   emptyQuestion,
   METRIC_OPTIONS,
+  newGridId,
   QUESTION_KIND_OPTIONS,
   QuestionKind,
   toApiQuestion,
@@ -283,7 +286,7 @@ export function SurveyEditor({
         <div className="survey-editor-section">
           <h3 className="survey-editor-section-title">Конструктор вопросов</h3>
           <p className="survey-editor-section-sub">
-            Тип, метрика, категория и подписи крайних точек шкалы — как в Google Forms.
+            Текст, шкалы и сетка строк×столбцов — как в Google Forms.
           </p>
           {questionsLocked && (
             <p className="muted">
@@ -293,6 +296,7 @@ export function SurveyEditor({
           )}
           {questions.map((q, idx) => {
             const maxMark = q.kind === 'LIKERT_10' ? '10' : '5';
+            const isScale = q.kind === 'LIKERT_5' || q.kind === 'LIKERT_10';
             return (
               <div className="question-block" key={idx} style={{ animationDelay: `${idx * 0.04}s` }}>
                 <div className="question-block-head">
@@ -316,9 +320,22 @@ export function SurveyEditor({
                       value={q.kind}
                       ariaLabel="Тип вопроса"
                       disabled={questionsLocked}
-                      onChange={(kind) =>
-                        updateQuestion(idx, { kind: kind as QuestionKind })
-                      }
+                      onChange={(kind) => {
+                        const next = kind as QuestionKind;
+                        updateQuestion(idx, {
+                          kind: next,
+                          ...(next === 'GRID'
+                            ? {
+                                gridRows:
+                                  q.gridRows?.length ? q.gridRows : defaultGridRows(),
+                                gridColumns:
+                                  q.gridColumns?.length
+                                    ? q.gridColumns
+                                    : defaultGridColumns(),
+                              }
+                            : {}),
+                        });
+                      }}
                       options={QUESTION_KIND_OPTIONS}
                     />
                   </div>
@@ -345,7 +362,7 @@ export function SurveyEditor({
                     options={ensureCategoryOption(q.category)}
                   />
                 </div>
-                {q.kind !== 'TEXT' && (
+                {isScale && (
                   <>
                     <div className="scale-label-preview">
                       <span>{q.scaleMinLabel.trim() || '1'}</span>
@@ -385,6 +402,140 @@ export function SurveyEditor({
                       </div>
                     </div>
                   </>
+                )}
+                {q.kind === 'GRID' && (
+                  <div className="grid-builder">
+                    <div className="grid-builder-col">
+                      <div className="grid-builder-title">Строки</div>
+                      {q.gridRows.map((row, rowIdx) => (
+                        <div className="grid-builder-row" key={row.id}>
+                          <span className="grid-builder-index">{rowIdx + 1}</span>
+                          <input
+                            disabled={questionsLocked}
+                            placeholder="Название строки"
+                            value={row.label}
+                            onChange={(e) => {
+                              const gridRows = q.gridRows.map((r, i) =>
+                                i === rowIdx ? { ...r, label: e.target.value } : r,
+                              );
+                              updateQuestion(idx, { gridRows });
+                            }}
+                          />
+                          {!questionsLocked && q.gridRows.length > 1 && (
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() =>
+                                updateQuestion(idx, {
+                                  gridRows: q.gridRows.filter((_, i) => i !== rowIdx),
+                                })
+                              }
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {!questionsLocked && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() =>
+                            updateQuestion(idx, {
+                              gridRows: [
+                                ...q.gridRows,
+                                { id: newGridId('r'), label: '' },
+                              ],
+                            })
+                          }
+                        >
+                          + Строка
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid-builder-col">
+                      <div className="grid-builder-title">Столбцы</div>
+                      {q.gridColumns.map((col, colIdx) => (
+                        <div className="grid-builder-row" key={col.id}>
+                          <span className="grid-builder-index">{colIdx + 1}</span>
+                          <input
+                            disabled={questionsLocked}
+                            placeholder="Подпись"
+                            value={col.label}
+                            onChange={(e) => {
+                              const gridColumns = q.gridColumns.map((c, i) =>
+                                i === colIdx ? { ...c, label: e.target.value } : c,
+                              );
+                              updateQuestion(idx, { gridColumns });
+                            }}
+                          />
+                          <input
+                            className="grid-builder-score"
+                            disabled={questionsLocked}
+                            type="number"
+                            placeholder="балл"
+                            title="Числовой балл для аналитики (пусто = без балла)"
+                            value={col.value ?? ''}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const gridColumns = q.gridColumns.map((c, i) =>
+                                i === colIdx
+                                  ? {
+                                      ...c,
+                                      value:
+                                        raw === ''
+                                          ? null
+                                          : Number(raw),
+                                    }
+                                  : c,
+                              );
+                              updateQuestion(idx, { gridColumns });
+                            }}
+                          />
+                          {!questionsLocked && q.gridColumns.length > 2 && (
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() =>
+                                updateQuestion(idx, {
+                                  gridColumns: q.gridColumns.filter(
+                                    (_, i) => i !== colIdx,
+                                  ),
+                                })
+                              }
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {!questionsLocked && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() =>
+                            updateQuestion(idx, {
+                              gridColumns: [
+                                ...q.gridColumns,
+                                { id: newGridId('c'), label: '', value: null },
+                              ],
+                            })
+                          }
+                        >
+                          + Столбец
+                        </button>
+                      )}
+                    </div>
+                    <CustomCheckbox
+                      variant="toggle"
+                      checked={q.requireAllRows}
+                      onChange={(requireAllRows) =>
+                        updateQuestion(idx, { requireAllRows })
+                      }
+                      label="Требовать ответ во всех строках"
+                      disabled={questionsLocked}
+                    />
+                  </div>
                 )}
                 {!questionsLocked && questions.length > 1 && (
                   <button

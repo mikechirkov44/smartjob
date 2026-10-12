@@ -16,6 +16,34 @@ import {
 import { Type } from 'class-transformer';
 import { QuestionType, SurveyStatus, SurveyTemplate } from '@prisma/client';
 
+export class GridRowDto {
+  @IsString()
+  @MinLength(1)
+  id!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
+  label!: string;
+}
+
+export class GridColumnDto {
+  @IsString()
+  @MinLength(1)
+  id!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  label!: string;
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== undefined)
+  @Type(() => Number)
+  @IsInt()
+  value?: number | null;
+}
+
 export class CustomQuestionDto {
   @IsString()
   @MinLength(3)
@@ -50,6 +78,22 @@ export class CustomQuestionDto {
   @IsString()
   @MaxLength(80)
   scaleMaxLabel?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GridRowDto)
+  gridRows?: GridRowDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GridColumnDto)
+  gridColumns?: GridColumnDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  requireAllRows?: boolean;
 
   @IsOptional()
   @Type(() => Number)

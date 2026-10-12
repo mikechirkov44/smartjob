@@ -46,13 +46,41 @@ export class SurveysService {
     const mapped = mapQuestionType(type);
     if (mapped === 'ENPS') return QuestionType.ENPS;
     if (mapped === 'TEXT') return QuestionType.TEXT;
+    if (mapped === 'GRID') return QuestionType.GRID;
     return QuestionType.LIKERT;
   }
 
   private toScaleMax(q: TemplateQuestion): number {
     if (q.type === 'ENPS') return 10;
-    if (q.type === 'TEXT') return 5;
+    if (q.type === 'TEXT' || q.type === 'GRID') return 5;
     return q.scaleMax === 10 ? 10 : 5;
+  }
+
+  private normalizeGridQuestion(
+    q: NonNullable<CreateSurveyDto['questions']>[number],
+  ): Pick<TemplateQuestion, 'gridRows' | 'gridColumns' | 'requireAllRows'> {
+    const rows = (q.gridRows || [])
+      .map((r) => ({ id: r.id.trim(), label: r.label.trim() }))
+      .filter((r) => r.id && r.label);
+    const columns = (q.gridColumns || [])
+      .map((c) => ({
+        id: c.id.trim(),
+        label: c.label.trim(),
+        value: c.value == null ? null : Number(c.value),
+      }))
+      .filter((c) => c.id && c.label);
+
+    if (rows.length < 1) {
+      throw new BadRequestException('В сетке нужна хотя бы одна строка');
+    }
+    if (columns.length < 2) {
+      throw new BadRequestException('В сетке нужно минимум 2 столбца');
+    }
+    return {
+      gridRows: rows,
+      gridColumns: columns,
+      requireAllRows: q.requireAllRows ?? true,
+    };
   }
 
   private resolveTemplateQuestions(
@@ -68,6 +96,17 @@ export class SurveysService {
       }
       const questions: TemplateQuestion[] = custom.map((q) => {
         const type = mapQuestionType(q.type);
+        if (type === 'GRID') {
+          const grid = this.normalizeGridQuestion(q);
+          return {
+            text: q.text,
+            metric: q.metric || 'Общее',
+            category: q.category || 'custom',
+            type,
+            scaleMax: 5,
+            ...grid,
+          };
+        }
         const scaleMax =
           type === 'ENPS' ? 10 : type === 'TEXT' ? 5 : q.scaleMax === 10 ? 10 : 5;
         return {
@@ -167,6 +206,9 @@ export class SurveysService {
               scaleMax: this.toScaleMax(q),
               scaleMinLabel: q.scaleMinLabel || null,
               scaleMaxLabel: q.scaleMaxLabel || null,
+              gridRows: q.gridRows ?? undefined,
+              gridColumns: q.gridColumns ?? undefined,
+              requireAllRows: q.requireAllRows ?? true,
             })),
           },
         },
@@ -242,6 +284,9 @@ export class SurveysService {
             scaleMax: this.toScaleMax(q),
             scaleMinLabel: q.scaleMinLabel || null,
             scaleMaxLabel: q.scaleMaxLabel || null,
+            gridRows: q.gridRows ?? undefined,
+            gridColumns: q.gridColumns ?? undefined,
+            requireAllRows: q.requireAllRows ?? true,
           })),
         });
       }

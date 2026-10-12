@@ -151,3 +151,66 @@
 .cover-option.upload:hover .cover-upload-placeholder {
   transform: scale(1.06);
 }
+
+.grid-builder {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.grid-builder-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.grid-builder-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.grid-builder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grid-builder-index {
+  width: 22px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--soft);
+  text-align: center;
+}
+
+.grid-builder-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.grid-builder-score {
+  flex: 0 0 64px !important;
+}
+
+.grid-builder > .custom-check {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 820px) {
+  .grid-builder {
+    grid-template-columns: 1fr;
+  }
+}

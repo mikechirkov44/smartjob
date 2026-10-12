@@ -36,6 +36,7 @@ enum QuestionType {
   LIKERT
   ENPS
   TEXT
+  GRID
 }
 
 enum LinkType {
@@ -135,18 +136,21 @@ model Survey {
 }
 
 model SurveyQuestion {
-  id            String       @id @default(cuid())
-  surveyId      String
-  sortOrder     Int
-  type          QuestionType @default(LIKERT)
-  scaleMax      Int          @default(5)
-  scaleMinLabel String?
-  scaleMaxLabel String?
-  metric        String?
-  category      String?
-  text          String
-  survey        Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  answers       Answer[]
+  id             String       @id @default(cuid())
+  surveyId       String
+  sortOrder      Int
+  type           QuestionType @default(LIKERT)
+  scaleMax       Int          @default(5)
+  scaleMinLabel  String?
+  scaleMaxLabel  String?
+  gridRows       Json?
+  gridColumns    Json?
+  requireAllRows Boolean      @default(true)
+  metric         String?
+  category       String?
+  text           String
+  survey         Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers        Answer[]
 
   @@index([surveyId])
 }
@@ -192,6 +196,7 @@ model Answer {
   questionId String
   valueInt   Int?
   valueText  String?
+  valueJson  Json?
   response   Response       @relation(fields: [responseId], references: [id], onDelete: Cascade)
   question   SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 

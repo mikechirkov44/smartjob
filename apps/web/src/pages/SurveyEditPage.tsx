@@ -4,8 +4,12 @@ import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
 import { SurveyEditor, SurveyFormState } from '../components/SurveyEditor';
 import {
+  defaultGridColumns,
+  defaultGridRows,
   EditorQuestion,
   emptyQuestion,
+  GridColumn,
+  GridRow,
   kindFromApi,
 } from '../questionOptions';
 import { statusLabel } from '../statusLabels';
@@ -29,6 +33,9 @@ type SurveyPayload = {
     scaleMax?: number;
     scaleMinLabel?: string | null;
     scaleMaxLabel?: string | null;
+    gridRows?: GridRow[] | null;
+    gridColumns?: GridColumn[] | null;
+    requireAllRows?: boolean;
   }>;
 };
 
@@ -69,14 +76,26 @@ export function SurveyEditPage() {
         const editable = s.questions.filter((q) => q.type !== 'ENPS');
         setQuestions(
           editable.length
-            ? editable.map((q) => ({
-                text: q.text,
-                metric: q.metric || 'Общее',
-                category: q.category || 'custom',
-                kind: kindFromApi(q.type, q.scaleMax),
-                scaleMinLabel: q.scaleMinLabel || '',
-                scaleMaxLabel: q.scaleMaxLabel || '',
-              }))
+            ? editable.map((q) => {
+                const kind = kindFromApi(q.type, q.scaleMax);
+                return {
+                  text: q.text,
+                  metric: q.metric || 'Общее',
+                  category: q.category || 'custom',
+                  kind,
+                  scaleMinLabel: q.scaleMinLabel || '',
+                  scaleMaxLabel: q.scaleMaxLabel || '',
+                  gridRows:
+                    q.gridRows && q.gridRows.length
+                      ? q.gridRows
+                      : defaultGridRows(),
+                  gridColumns:
+                    q.gridColumns && q.gridColumns.length
+                      ? q.gridColumns
+                      : defaultGridColumns(),
+                  requireAllRows: q.requireAllRows ?? true,
+                };
+              })
             : [emptyQuestion()],
         );
       })

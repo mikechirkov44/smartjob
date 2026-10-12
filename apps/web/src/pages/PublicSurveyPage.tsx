@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { coverSrc } from '../coverPresets';
+import type { GridColumn, GridRow } from '../questionOptions';
 import './public-survey.css';
 
 type Question = {
@@ -9,13 +10,20 @@ type Question = {
   text: string;
   metric?: string;
   category?: string;
-  type: 'LIKERT' | 'ENPS' | 'TEXT';
+  type: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID';
   scaleMax?: number;
   scaleMinLabel?: string | null;
   scaleMaxLabel?: string | null;
+  gridRows?: GridRow[] | null;
+  gridColumns?: GridColumn[] | null;
+  requireAllRows?: boolean;
 };
 
-type AnswerValue = { valueInt?: number; valueText?: string };
+type AnswerValue = {
+  valueInt?: number;
+  valueText?: string;
+  valueJson?: Record<string, string>;
+};
 
 type Payload = {
   organizationName: string;
@@ -37,6 +45,7 @@ export function PublicSurveyPage() {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [textDraft, setTextDraft] = useState('');
+  const [gridDraft, setGridDraft] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -59,6 +68,9 @@ export function PublicSurveyPage() {
     if (current.type === 'TEXT') {
       setTextDraft(answers[current.id]?.valueText || '');
     }
+    if (current.type === 'GRID') {
+      setGridDraft(answers[current.id]?.valueJson || {});
+    }
   }, [current?.id]);
 
   const submitAll = async (nextAnswers: Record<string, AnswerValue>) => {
@@ -72,6 +84,7 @@ export function PublicSurveyPage() {
             questionId,
             valueInt: value.valueInt,
             valueText: value.valueText,
+            valueJson: value.valueJson,
           })),
         },
       });
@@ -103,6 +116,21 @@ export function PublicSurveyPage() {
     await advance({
       ...answers,
       [current.id]: { valueText: textDraft.trim() },
+    });
+  };
+
+  const submitGrid = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!current) return;
+    const rows = current.gridRows || [];
+    if (current.requireAllRows !== false) {
+      if (!rows.every((r) => gridDraft[r.id])) return;
+    } else if (!Object.keys(gridDraft).length) {
+      return;
+    }
+    await advance({
+      ...answers,
+      [current.id]: { valueJson: { ...gridDraft } },
     });
   };
 
@@ -199,7 +227,19 @@ export function PublicSurveyPage() {
   const hint =
     current?.type === 'TEXT'
       ? 'Введите ответ своими словами'
-      : `${min} — ${minLabel}, ${scaleMax} — ${maxLabel}`;
+      : current?.type === 'GRID'
+        ? current.requireAllRows === false
+          ? 'Отметьте оценку в нужных строках'
+          : 'Отметьте оценку в каждой строке'
+        : `${min} — ${minLabel}, ${scaleMax} — ${maxLabel}`;
+
+  const gridRows = current?.gridRows || [];
+  const gridColumns = current?.gridColumns || [];
+  const gridComplete =
+    current?.type === 'GRID' &&
+    (current.requireAllRows === false
+      ? Object.keys(gridDraft).length > 0
+      : gridRows.every((r) => Boolean(gridDraft[r.id])));
 
   return (
     <div className="public-wrap">
@@ -240,6 +280,54 @@ export function PublicSurveyPage() {
               className="btn btn-primary"
               type="submit"
               disabled={busy || !textDraft.trim()}
+            >
+              {idx < questions.length - 1 ? 'Далее' : 'Отправить'}
+            </button>
+          </form>
+        ) : current?.type === 'GRID' ? (
+          <form className="grid-answer" onSubmit={(e) => void submitGrid(e)}>
+            <div className="matrix-scroll">
+              <table className="matrix-table">
+                <thead>
+                  <tr>
+                    <th className="matrix-corner" />
+                    {gridColumns.map((col) => (
+                      <th key={col.id}>{col.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {gridRows.map((row) => (
+                    <tr key={row.id}>
+                      <th scope="row">{row.label}</th>
+                      {gridColumns.map((col) => (
+                        <td key={col.id}>
+                          <label className="matrix-radio">
+                            <input
+                              type="radio"
+                              name={`grid-${current.id}-${row.id}`}
+                              checked={gridDraft[row.id] === col.id}
+                              disabled={busy}
+                              onChange={() =>
+                                setGridDraft((prev) => ({
+                                  ...prev,
+                                  [row.id]: col.id,
+                                }))
+                              }
+                            />
+                            <span />
+                          </label>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={busy || !gridComplete}
             >
               {idx < questions.length - 1 ? 'Далее' : 'Отправить'}
             </button>
