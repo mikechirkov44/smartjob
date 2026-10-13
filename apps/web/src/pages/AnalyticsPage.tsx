@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -83,11 +83,21 @@ type Analytics = {
   responses: Array<{
     id: string;
     date: string;
+    surveyTitle?: string;
     dept: string;
-    engagement: number;
-    loyalty: number;
-    satisfaction: number;
-    enps: number;
+    engagement: number | null;
+    loyalty: number | null;
+    satisfaction: number | null;
+    enps: number | null;
+    anonymous: boolean;
+    employee?: { fullName: string; email?: string | null } | null;
+    answers: Array<{
+      questionId: string;
+      text: string;
+      type: string;
+      metric?: string | null;
+      value: string;
+    }>;
   }>;
   surveys: Array<{ id: string; title: string }>;
   engMetrics: string[];
@@ -123,6 +133,9 @@ export function AnalyticsPage() {
   const [data, setData] = useState<Analytics | null>(null);
   const [deptFilter, setDeptFilter] = useState('');
   const [gradeFilter, setGradeFilter] = useState('');
+  const [expandedResponseId, setExpandedResponseId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!organizationId) return;
@@ -130,7 +143,10 @@ export function AnalyticsPage() {
     void api<Analytics>(`/organizations/${organizationId}/analytics${q}`, {
       token,
       organizationId,
-    }).then(setData);
+    }).then((payload) => {
+      setData(payload);
+      setExpandedResponseId(null);
+    });
   }, [token, organizationId, surveyId]);
 
   const filteredSegments = useMemo(() => {
@@ -400,10 +416,16 @@ export function AnalyticsPage() {
 
           <div className="card table-wrap">
             <h3 style={{ marginBottom: 12 }}>Последние ответы</h3>
+            <p className="muted" style={{ marginTop: -4, marginBottom: 12 }}>
+              Нажмите на строку, чтобы увидеть ответы по вопросам. ФИО видно только
+              по персональным ссылкам, если в опросе включена идентификация.
+            </p>
             <table className="table">
               <thead>
                 <tr>
+                  <th style={{ width: 28 }} />
                   <th>Дата</th>
+                  <th>Респондент</th>
                   <th>Отдел</th>
                   <th>Вовлеч.</th>
                   <th>Лояльн.</th>
@@ -412,22 +434,90 @@ export function AnalyticsPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.responses.map((r) => (
-                  <tr key={r.id}>
-                    <td>{new Date(r.date).toLocaleDateString('ru-RU')}</td>
-                    <td>{r.dept}</td>
-                    <td style={{ color: scoreColor(r.engagement), fontWeight: 700 }}>
-                      {r.engagement.toFixed(2)}
-                    </td>
-                    <td style={{ color: scoreColor(r.loyalty), fontWeight: 700 }}>
-                      {r.loyalty.toFixed(2)}
-                    </td>
-                    <td style={{ color: scoreColor(r.satisfaction), fontWeight: 700 }}>
-                      {r.satisfaction.toFixed(2)}
-                    </td>
-                    <td style={{ fontWeight: 700 }}>{r.enps}</td>
-                  </tr>
-                ))}
+                {data.responses.map((r) => {
+                  const open = expandedResponseId === r.id;
+                  return (
+                    <Fragment key={r.id}>
+                      <tr
+                        className={`analytics-response-row ${open ? 'open' : ''}`}
+                        onClick={() =>
+                          setExpandedResponseId(open ? null : r.id)
+                        }
+                      >
+                        <td className="analytics-response-toggle">
+                          {open ? '▾' : '▸'}
+                        </td>
+                        <td>{new Date(r.date).toLocaleDateString('ru-RU')}</td>
+                        <td>
+                          {r.anonymous
+                            ? 'Анонимно'
+                            : r.employee?.fullName || '—'}
+                        </td>
+                        <td>{r.dept}</td>
+                        <td
+                          style={{
+                            color:
+                              r.engagement == null
+                                ? undefined
+                                : scoreColor(r.engagement),
+                            fontWeight: 700,
+                          }}
+                        >
+                          {r.engagement == null ? '—' : r.engagement.toFixed(2)}
+                        </td>
+                        <td
+                          style={{
+                            color:
+                              r.loyalty == null
+                                ? undefined
+                                : scoreColor(r.loyalty),
+                            fontWeight: 700,
+                          }}
+                        >
+                          {r.loyalty == null ? '—' : r.loyalty.toFixed(2)}
+                        </td>
+                        <td
+                          style={{
+                            color:
+                              r.satisfaction == null
+                                ? undefined
+                                : scoreColor(r.satisfaction),
+                            fontWeight: 700,
+                          }}
+                        >
+                          {r.satisfaction == null
+                            ? '—'
+                            : r.satisfaction.toFixed(2)}
+                        </td>
+                        <td style={{ fontWeight: 700 }}>{r.enps ?? '—'}</td>
+                      </tr>
+                      {open && (
+                        <tr className="analytics-response-detail">
+                          <td colSpan={8}>
+                            {r.surveyTitle && (
+                              <div className="muted" style={{ marginBottom: 8 }}>
+                                Опрос: {r.surveyTitle}
+                              </div>
+                            )}
+                            <ol className="analytics-answer-list">
+                              {(r.answers || []).map((a) => (
+                                <li key={a.questionId}>
+                                  <div className="analytics-answer-q">
+                                    {a.metric ? (
+                                      <span className="muted">{a.metric} — </span>
+                                    ) : null}
+                                    {a.text}
+                                  </div>
+                                  <div className="analytics-answer-a">{a.value}</div>
+                                </li>
+                              ))}
+                            </ol>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

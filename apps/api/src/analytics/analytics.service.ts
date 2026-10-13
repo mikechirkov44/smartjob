@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { LinkType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   isGridColumns,
@@ -80,8 +80,16 @@ export class AnalyticsService {
         ...(surveyId ? { id: surveyId } : {}),
       },
       include: {
-        questions: true,
-        responses: { include: { answers: true } },
+        questions: { orderBy: { sortOrder: 'asc' } },
+        responses: {
+          include: {
+            answers: true,
+            employee: {
+              select: { id: true, fullName: true, email: true },
+            },
+            link: { select: { type: true } },
+          },
+        },
       },
     });
 
@@ -94,6 +102,7 @@ export class AnalyticsService {
 
     return {
       ...analytics,
+      responses: this.buildRecentResponses(surveys, rows),
       surveys: surveyList.map((s) => ({
         id: s.id,
         title: s.title,
@@ -519,20 +528,141 @@ export class AnalyticsService {
       heatmap,
       alpha,
       alerts,
-      responses: rows
-        .slice()
-        .sort((a, b) => b.date.localeCompare(a.date))
-        .slice(0, 30)
-        .map((r) => ({
-          id: r.id,
-          date: r.date,
-          dept: r.dept,
-          grade: r.grade,
-          engagement: r.engagementIndex,
-          loyalty: r.loyaltyIndex,
-          satisfaction: r.satisfactionIndex,
-          enps: r.enps,
-        })),
     };
+  }
+
+  private formatAnswerValue(
+    question: {
+      type: string;
+      scaleMax: number;
+      scaleMinLabel?: string | null;
+      scaleMaxLabel?: string | null;
+      gridRows?: Prisma.JsonValue | null;
+      gridColumns?: Prisma.JsonValue | null;
+    },
+    answer: {
+      valueInt: number | null;
+      valueText: string | null;
+      valueJson?: Prisma.JsonValue | null;
+    },
+  ): string {
+    if (question.type === 'TEXT') {
+      return answer.valueText?.trim() || '—';
+    }
+
+    if (question.type === 'GRID') {
+      if (!isGridRows(question.gridRows) || !isGridColumns(question.gridColumns)) {
+        return '—';
+      }
+      const gridAnswer = parseGridAnswer(answer.valueJson);
+      if (!gridAnswer) return '—';
+      const colById = new Map(question.gridColumns.map((c) => [c.id, c]));
+      const parts = question.gridRows
+        .map((row) => {
+          const colId = gridAnswer[row.id];
+          if (!colId) return null;
+          const col = colById.get(colId);
+          if (!col) return null;
+          return `${row.label}: ${col.label}`;
+        })
+        .filter((part): part is string => Boolean(part));
+      return parts.length ? parts.join('; ') : '—';
+    }
+
+    if (answer.valueInt == null) return '—';
+    if (question.type === 'ENPS') {
+      return String(answer.valueInt);
+    }
+
+    const scaleMax = question.scaleMax === 10 ? 10 : 5;
+    const labels: string[] = [String(answer.valueInt)];
+    if (answer.valueInt === 1 && question.scaleMinLabel) {
+      labels.push(`(${question.scaleMinLabel})`);
+    } else if (answer.valueInt === scaleMax && question.scaleMaxLabel) {
+      labels.push(`(${question.scaleMaxLabel})`);
+    }
+    return labels.join(' ');
+  }
+
+  private buildRecentResponses(
+    surveys: Array<{
+      title: string;
+      adminCanIdentifyRespondents: boolean;
+      questions: Array<{
+        id: string;
+        text: string;
+        type: string;
+        metric: string | null;
+        sortOrder: number;
+        scaleMax: number;
+        scaleMinLabel: string | null;
+        scaleMaxLabel: string | null;
+        gridRows?: Prisma.JsonValue | null;
+        gridColumns?: Prisma.JsonValue | null;
+      }>;
+      responses: Array<{
+        id: string;
+        completedAt: Date;
+        departmentName: string | null;
+        grade: string | null;
+        enps: number | null;
+        employee: { id: string; fullName: string; email: string | null } | null;
+        link: { type: LinkType };
+        answers: Array<{
+          questionId: string;
+          valueInt: number | null;
+          valueText: string | null;
+          valueJson?: Prisma.JsonValue | null;
+        }>;
+      }>;
+    }>,
+    rows: AnalyticRow[],
+  ) {
+    const indexesById = new Map(rows.map((r) => [r.id, r]));
+    const flat = surveys.flatMap((survey) =>
+      survey.responses.map((response) => ({ survey, response })),
+    );
+
+    return flat
+      .sort(
+        (a, b) =>
+          b.response.completedAt.getTime() - a.response.completedAt.getTime(),
+      )
+      .slice(0, 30)
+      .map(({ survey, response }) => {
+        const canIdentify =
+          survey.adminCanIdentifyRespondents &&
+          response.link.type === LinkType.PERSONAL;
+        const indexes = indexesById.get(response.id);
+        const answerByQuestion = new Map(
+          response.answers.map((a) => [a.questionId, a]),
+        );
+
+        return {
+          id: response.id,
+          date: response.completedAt.toISOString(),
+          surveyTitle: survey.title,
+          dept: response.departmentName || 'Без отдела',
+          grade: response.grade || '',
+          engagement: indexes?.engagementIndex ?? null,
+          loyalty: indexes?.loyaltyIndex ?? null,
+          satisfaction: indexes?.satisfactionIndex ?? null,
+          enps: indexes?.enps ?? response.enps,
+          anonymous: !canIdentify,
+          employee: canIdentify ? response.employee : null,
+          answers: survey.questions.map((question) => {
+            const answer = answerByQuestion.get(question.id);
+            return {
+              questionId: question.id,
+              text: question.text,
+              type: question.type,
+              metric: question.metric,
+              value: answer
+                ? this.formatAnswerValue(question, answer)
+                : '—',
+            };
+          }),
+        };
+      });
   }
 }
