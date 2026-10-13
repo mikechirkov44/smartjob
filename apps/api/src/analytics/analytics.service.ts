@@ -165,9 +165,9 @@ export class AnalyticsService {
   }
 
   /**
-   * FULL → classic 10 engagement metrics.
-   * PULSE / CUSTOM / WORK_CONDITIONS → metrics from survey questions.
-   * Several surveys → union (FULL contributes classic set).
+   * Single FULL → classic 10 engagement metrics.
+   * Single PULSE / CUSTOM / WORK_CONDITIONS → metrics from that survey.
+   * Several surveys / «all» → classic Full set only (avoid huge mixed matrices).
    */
   private resolveDriverMetrics(
     surveys: Array<{
@@ -182,10 +182,6 @@ export class AnalyticsService {
   ): string[] {
     if (!surveys.length) return [...ENG_METRICS];
 
-    if (surveys.every((s) => s.template === SurveyTemplate.FULL)) {
-      return [...ENG_METRICS];
-    }
-
     if (surveys.length === 1) {
       const survey = surveys[0];
       if (survey.template === SurveyTemplate.FULL) {
@@ -195,17 +191,7 @@ export class AnalyticsService {
       return collected.length ? this.orderDriverMetrics(collected) : [...ENG_METRICS];
     }
 
-    const names = new Set<string>();
-    for (const survey of surveys) {
-      if (survey.template === SurveyTemplate.FULL) {
-        ENG_METRICS.forEach((m) => names.add(m));
-      } else {
-        this.collectScaleMetrics(survey.questions).forEach((m) => names.add(m));
-      }
-    }
-    return names.size
-      ? this.orderDriverMetrics([...names])
-      : [...ENG_METRICS];
+    return [...ENG_METRICS];
   }
 
   private pushNormalized(

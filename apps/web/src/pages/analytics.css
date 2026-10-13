@@ -196,16 +196,17 @@
 .heatmap table {
   border-collapse: separate;
   border-spacing: 0;
+  table-layout: fixed;
   width: 100%;
-  min-width: 820px;
   font-size: 13px;
 }
 
 .heatmap th,
 .heatmap td {
-  padding: 12px 14px;
+  padding: 12px 10px;
   text-align: center;
   border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
 }
 
 .heatmap th {
@@ -218,10 +219,30 @@
 
 .heatmap th:first-child,
 .heatmap td:first-child {
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
   text-align: left;
   font-weight: 600;
   color: var(--text);
   background: #f8fafc;
+  padding-left: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heatmap th:last-child,
+.heatmap td:last-child {
+  width: 88px;
+  min-width: 88px;
+  max-width: 88px;
+}
+
+.heatmap th.heatmap-dept,
+.heatmap td.heatmap-dept {
+  width: 88px;
+  min-width: 88px;
 }
 
 .heatmap td.value {

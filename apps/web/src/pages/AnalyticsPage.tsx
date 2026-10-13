@@ -222,6 +222,11 @@ export function AnalyticsPage() {
     ]),
   );
   const driversReady = data.N >= 5 && data.driverResults.some((d) => d.n >= 5);
+  const metricCount = (data.engMetrics || []).length;
+  const hasCorrSignal = (data.corrMatrix || []).some((row) =>
+    (row || []).some((v) => Math.abs(v) > 0),
+  );
+  const showCorrMatrix = metricCount > 0 && metricCount <= 12 && (hasCorrSignal || data.N >= 5);
 
   return (
     <div className="stack page-enter">
@@ -333,12 +338,19 @@ export function AnalyticsPage() {
           <div className="card">
             <h3 style={{ marginBottom: 14 }}>Heatmap: метрики × отделы</h3>
             <div className="heatmap">
-              <table>
+              <table
+                style={{
+                  minWidth:
+                    220 + 88 + data.heatmap.departments.length * 88,
+                }}
+              >
                 <thead>
                   <tr>
                     <th>Метрика</th>
                     {data.heatmap.departments.map((d) => (
-                      <th key={d}>{d}</th>
+                      <th key={d} className="heatmap-dept" title={d}>
+                        {d}
+                      </th>
                     ))}
                     <th>Среднее</th>
                   </tr>
@@ -346,11 +358,11 @@ export function AnalyticsPage() {
                 <tbody>
                   {data.heatmap.metrics.map((m) => (
                     <tr key={m.name}>
-                      <td>{m.name}</td>
+                      <td title={m.name}>{m.name}</td>
                       {m.cells.map((c) => (
                         <td
                           key={c.dept}
-                          className="value"
+                          className="value heatmap-dept"
                           style={{
                             background: c.value == null ? '#e2e8f0' : scoreColor(c.value),
                           }}
@@ -723,38 +735,46 @@ export function AnalyticsPage() {
           <div className="grid-2">
             <div className="card table-wrap">
               <h3 style={{ marginBottom: 12 }}>Корреляционная матрица</h3>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th></th>
-                    {(data.engMetrics || []).map((m) => (
-                      <th key={m} style={{ fontSize: 10 }}>
-                        {short[m]}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(data.engMetrics || []).map((row, i) => (
-                    <tr key={row}>
-                      <td style={{ fontWeight: 600 }}>{row}</td>
-                      {(data.corrMatrix[i] || []).map((v, j) => (
-                        <td
-                          key={j}
-                          style={{
-                            background: `rgba(99,102,241,${Math.min(0.85, Math.abs(v))})`,
-                            color: Math.abs(v) > 0.45 ? '#fff' : 'var(--text)',
-                            fontWeight: 700,
-                            textAlign: 'center',
-                          }}
-                        >
-                          {v.toFixed(2)}
-                        </td>
+              {showCorrMatrix ? (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      {(data.engMetrics || []).map((m) => (
+                        <th key={m} style={{ fontSize: 10 }}>
+                          {short[m]}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(data.engMetrics || []).map((row, i) => (
+                      <tr key={row}>
+                        <td style={{ fontWeight: 600 }}>{row}</td>
+                        {(data.corrMatrix[i] || []).map((v, j) => (
+                          <td
+                            key={j}
+                            style={{
+                              background: `rgba(15,118,110,${Math.min(0.85, Math.abs(v))})`,
+                              color: Math.abs(v) > 0.45 ? '#fff' : 'var(--text)',
+                              fontWeight: 700,
+                              textAlign: 'center',
+                            }}
+                          >
+                            {v.toFixed(2)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="muted" style={{ margin: 0 }}>
+                  {metricCount > 12
+                    ? `Слишком много метрик (${metricCount}) для наглядной матрицы. Выберите опрос Full или опрос с меньшим числом шкал.`
+                    : 'Пока недостаточно данных: корреляции появляются при ≥ 5 ответах с eNPS по выбранному опросу.'}
+                </p>
+              )}
             </div>
             <div className="card table-wrap">
               <h3 style={{ marginBottom: 12 }}>
