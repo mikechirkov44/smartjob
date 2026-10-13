@@ -59,6 +59,7 @@ export function SurveyDetailPage() {
   const [responsesBusy, setResponsesBusy] = useState(false);
   const [statusBusy, setStatusBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedPersonalId, setCopiedPersonalId] = useState<string | null>(null);
 
   const load = async () => {
     if (!organizationId || !id) return;
@@ -145,6 +146,13 @@ export function SurveyDetailPage() {
     await navigator.clipboard.writeText(publicUrl);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const copyPersonalLink = async (linkId: string, tokenValue: string) => {
+    const url = `${window.location.origin}/s/${tokenValue}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedPersonalId(linkId);
+    window.setTimeout(() => setCopiedPersonalId(null), 1600);
   };
 
   const removeSurvey = async () => {
@@ -367,9 +375,42 @@ export function SurveyDetailPage() {
                     <tr key={l.id}>
                       <td>{l.employee?.fullName || '—'}</td>
                       <td>
-                        <a href={`/s/${l.token}`} target="_blank" rel="noreferrer">
-                          /s/{l.token.slice(0, 8)}…
-                        </a>
+                        <div className="personal-link-cell">
+                          <a href={`/s/${l.token}`} target="_blank" rel="noreferrer">
+                            /s/{l.token.slice(0, 8)}…
+                          </a>
+                          <button
+                            type="button"
+                            className={`icon-copy-btn ${copiedPersonalId === l.id ? 'copied' : ''}`}
+                            title={
+                              copiedPersonalId === l.id
+                                ? 'Скопировано'
+                                : 'Скопировать ссылку'
+                            }
+                            aria-label={
+                              copiedPersonalId === l.id
+                                ? 'Скопировано'
+                                : 'Скопировать ссылку'
+                            }
+                            onClick={() => void copyPersonalLink(l.id, l.token)}
+                          >
+                            {copiedPersonalId === l.id ? (
+                              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden>
+                                <path
+                                  fill="currentColor"
+                                  d="M6.5 11.2 3.3 8l1.1-1.1 2.1 2.1 4.6-4.6L12.2 5.5 6.5 11.2z"
+                                />
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden>
+                                <path
+                                  fill="currentColor"
+                                  d="M5.5 2A1.5 1.5 0 0 0 4 3.5V11h1.5V3.5h6V2h-6zm3 3A1.5 1.5 0 0 0 7 6.5v7A1.5 1.5 0 0 0 8.5 15h5A1.5 1.5 0 0 0 15 13.5v-7A1.5 1.5 0 0 0 13.5 5h-5zM8.5 6.5h5v7h-5v-7z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </td>
                       <td>{l._count.responses > 0 ? 'да' : 'нет'}</td>
                     </tr>

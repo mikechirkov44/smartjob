@@ -466,6 +466,45 @@ button {
   gap: 8px;
 }
 
+.personal-link-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.personal-link-cell a {
+  min-width: 0;
+}
+
+.icon-copy-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.icon-copy-btn:hover {
+  background: var(--primary-light);
+  border-color: #99f6e4;
+  color: var(--primary-dark);
+}
+
+.icon-copy-btn.copied {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
 /* Motion */
 .page-enter {
   animation: rise 0.45s var(--ease-out);
