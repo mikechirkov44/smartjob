@@ -216,8 +216,12 @@ export function AnalyticsPage() {
 
   const maxR = Math.max(...data.driverResults.map((d) => Math.abs(d.r)), 0.01);
   const short = Object.fromEntries(
-    (data.engMetrics || []).map((m) => [m, m.slice(0, 3)]),
+    (data.engMetrics || []).map((m) => [
+      m,
+      m.length <= 8 ? m : `${m.slice(0, 7)}…`,
+    ]),
   );
+  const driversReady = data.N >= 5 && data.driverResults.some((d) => d.n >= 5);
 
   return (
     <div className="stack page-enter">
@@ -645,23 +649,43 @@ export function AnalyticsPage() {
 
       {tab === 'drivers' && (
         <>
+          {!driversReady && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <p className="muted" style={{ margin: 0 }}>
+                Драйверы считаются по метрикам выбранного опроса (для Full — стандартные 10
+                метрик вовлечённости). Сейчас ответов с eNPS: {data.N}. Нужно ≥ 5, чтобы
+                корреляции и матрица приоритетов стали информативными.
+              </p>
+            </div>
+          )}
           <div className="grid-2">
             <div className="card">
               <h3 style={{ marginBottom: 12 }}>Драйверы eNPS</h3>
+              <p className="muted" style={{ marginTop: -4, marginBottom: 10 }}>
+                Метрик в расчёте: {(data.engMetrics || []).length}
+              </p>
               <div className="driver-list">
                 {data.driverResults.map((d, i) => {
                   const pct = (Math.abs(d.r) / maxR) * 100;
                   const sig =
-                    d.p < 0.01 ? '***' : d.p < 0.05 ? '**' : d.p < 0.1 ? '*' : 'ns';
+                    d.n < 5
+                      ? `n=${d.n}`
+                      : d.p < 0.01
+                        ? '***'
+                        : d.p < 0.05
+                          ? '**'
+                          : d.p < 0.1
+                            ? '*'
+                            : 'ns';
                   return (
-                    <div className={`driver-row ${i < 3 ? 'top' : ''}`} key={d.name}>
+                    <div className={`driver-row ${i < 3 && d.n >= 5 ? 'top' : ''}`} key={d.name}>
                       <div className="driver-rank">{i + 1}</div>
                       <div className="driver-name">{d.name}</div>
                       <div className="driver-bar-wrap">
                         <div className="driver-bar" style={{ width: `${pct}%` }} />
                       </div>
                       <div className="driver-val">{d.r.toFixed(2)}</div>
-                      <div className={`driver-sig ${d.p < 0.05 ? 'sig-star' : 'sig-ns'}`}>
+                      <div className={`driver-sig ${d.p < 0.05 && d.n >= 5 ? 'sig-star' : 'sig-ns'}`}>
                         {sig}
                       </div>
                     </div>
@@ -672,7 +696,8 @@ export function AnalyticsPage() {
             <div className="card">
               <h3 style={{ marginBottom: 12 }}>Матрица приоритетов</h3>
               <p className="muted" style={{ marginBottom: 8 }}>
-                Важность (β) × текущий балл. Средний балл: {data.avgMetricScore.toFixed(2)}
+                Важность ({data.reg ? 'β' : '|r|'} ) × текущий балл. Средний балл:{' '}
+                {data.avgMetricScore.toFixed(2)}
               </p>
               <div className="quad-legend">
                 <div className="quad">

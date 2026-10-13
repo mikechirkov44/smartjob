@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { LinkType, Prisma } from '@prisma/client';
+import { LinkType, Prisma, SurveyTemplate } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   isGridColumns,
@@ -16,6 +16,7 @@ import {
   weekKey,
 } from './stats';
 
+/** Classic Full engagement metrics — preserved for FULL template. */
 const ENG_METRICS = [
   'Руководитель',
   'Стратегия',
@@ -43,6 +44,12 @@ const SAT_METRICS = [
   'Оплата',
   'Безопасность',
 ];
+
+const SKIP_DRIVER_METRICS = new Set(
+  ['фио', 'enps', 'e-nps', 'общее'].map((s) => s.toLowerCase()),
+);
+
+const SKIP_DRIVER_CATEGORIES = new Set(['profile', 'open']);
 
 const BENCHMARK = {
   Вовлечённость: 3.75,
@@ -98,7 +105,8 @@ export class AnalyticsService {
     }
 
     const rows = this.buildRows(surveys);
-    const analytics = this.compute(rows);
+    const driverMetrics = this.resolveDriverMetrics(surveys);
+    const analytics = this.compute(rows, driverMetrics);
 
     return {
       ...analytics,
@@ -108,9 +116,96 @@ export class AnalyticsService {
         title: s.title,
         status: s.status,
       })),
-      engMetrics: ENG_METRICS,
+      engMetrics: driverMetrics,
       benchmarks: BENCHMARK,
     };
+  }
+
+  private isSkippedDriverMetric(metric: string) {
+    return SKIP_DRIVER_METRICS.has(metric.trim().toLowerCase());
+  }
+
+  private collectScaleMetrics(
+    questions: Array<{
+      metric: string | null;
+      category: string | null;
+      type: string;
+      gridRows?: Prisma.JsonValue | null;
+    }>,
+  ): string[] {
+    const names = new Set<string>();
+    for (const q of questions) {
+      const cat = (q.category || '').toLowerCase();
+      if (SKIP_DRIVER_CATEGORIES.has(cat)) continue;
+      if (q.type === 'ENPS' || q.type === 'TEXT') continue;
+
+      if (q.type === 'GRID' && isGridRows(q.gridRows)) {
+        for (const row of q.gridRows) {
+          const label = (row.label || q.metric || '').trim();
+          if (label && !this.isSkippedDriverMetric(label)) names.add(label);
+        }
+        continue;
+      }
+
+      const metric = (q.metric || '').trim();
+      if (metric && !this.isSkippedDriverMetric(metric)) names.add(metric);
+    }
+    return [...names];
+  }
+
+  private orderDriverMetrics(metrics: string[]): string[] {
+    const set = new Set(metrics);
+    const preferred = [...ENG_METRICS, ...LOY_METRICS, ...SAT_METRICS].filter(
+      (m) => set.has(m),
+    );
+    const rest = metrics
+      .filter((m) => !preferred.includes(m))
+      .sort((a, b) => a.localeCompare(b, 'ru'));
+    return [...preferred, ...rest];
+  }
+
+  /**
+   * FULL → classic 10 engagement metrics.
+   * PULSE / CUSTOM / WORK_CONDITIONS → metrics from survey questions.
+   * Several surveys → union (FULL contributes classic set).
+   */
+  private resolveDriverMetrics(
+    surveys: Array<{
+      template: SurveyTemplate;
+      questions: Array<{
+        metric: string | null;
+        category: string | null;
+        type: string;
+        gridRows?: Prisma.JsonValue | null;
+      }>;
+    }>,
+  ): string[] {
+    if (!surveys.length) return [...ENG_METRICS];
+
+    if (surveys.every((s) => s.template === SurveyTemplate.FULL)) {
+      return [...ENG_METRICS];
+    }
+
+    if (surveys.length === 1) {
+      const survey = surveys[0];
+      if (survey.template === SurveyTemplate.FULL) {
+        return [...ENG_METRICS];
+      }
+      const collected = this.collectScaleMetrics(survey.questions);
+      return collected.length ? this.orderDriverMetrics(collected) : [...ENG_METRICS];
+    }
+
+    const names = new Set<string>();
+    for (const survey of surveys) {
+      if (survey.template === SurveyTemplate.FULL) {
+        ENG_METRICS.forEach((m) => names.add(m));
+      } else {
+        this.collectScaleMetrics(survey.questions).forEach((m) => names.add(m));
+      }
+    }
+    return names.size
+      ? this.orderDriverMetrics([...names])
+      : [...ENG_METRICS];
   }
 
   private pushNormalized(
@@ -261,10 +356,11 @@ export class AnalyticsService {
     return rows;
   }
 
-  private compute(rows: AnalyticRow[]) {
+  private compute(rows: AnalyticRow[], driverMetrics: string[]) {
     const N = rows.length;
+    const metrics = driverMetrics.length ? driverMetrics : [...ENG_METRICS];
 
-    const driverResults = ENG_METRICS.map((name) => {
+    const driverResults = metrics.map((name) => {
       const pairs = rows
         .filter((r) => r.metrics[name] !== undefined)
         .map((r) => ({ x: r.metrics[name], y: r.enps }));
@@ -278,48 +374,67 @@ export class AnalyticsService {
     }).sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
 
     const validRows = rows.filter((r) =>
-      ENG_METRICS.every((m) => r.metrics[m] !== undefined),
+      metrics.every((m) => r.metrics[m] !== undefined),
     );
     const reg =
-      validRows.length >= 15
+      metrics.length >= 2 && validRows.length >= Math.max(15, metrics.length + 5)
         ? multipleRegression(
-            validRows.map((r) => ENG_METRICS.map((m) => r.metrics[m])),
+            validRows.map((r) => metrics.map((m) => r.metrics[m])),
             validRows.map((r) => r.enps),
           )
         : null;
 
     const regCoefs = reg
-      ? ENG_METRICS.map((name, i) => ({
+      ? metrics.map((name, i) => ({
           name,
           beta: round2(reg.coefficients[i] || 0),
         })).sort((a, b) => Math.abs(b.beta) - Math.abs(a.beta))
       : [];
 
     const importanceMap: Record<string, number> = {};
-    regCoefs.forEach((c) => {
-      importanceMap[c.name] = Math.abs(c.beta);
-    });
+    if (regCoefs.length) {
+      regCoefs.forEach((c) => {
+        importanceMap[c.name] = Math.abs(c.beta);
+      });
+    } else {
+      // Without regression, use |r| with eNPS as importance proxy.
+      driverResults.forEach((d) => {
+        importanceMap[d.name] = Math.abs(d.r);
+      });
+    }
     const maxImp = Math.max(...Object.values(importanceMap), 1e-9);
-    const scores = ENG_METRICS.map((name) => {
+    const scores = metrics.map((name) => {
       const vals = rows
         .map((r) => r.metrics[name])
         .filter((v): v is number => v !== undefined);
       return {
         name,
-        score: round2(mean(vals)),
+        score: vals.length ? round2(mean(vals)) : 0,
         importance: round2((importanceMap[name] || 0) / maxImp),
+        n: vals.length,
       };
     });
-    const avgMetricScore = mean(scores.map((s) => s.score));
+    const scoredForAvg = scores.filter((s) => s.n > 0);
+    const avgMetricScore = scoredForAvg.length
+      ? mean(scoredForAvg.map((s) => s.score))
+      : 0;
     const quadrants = {
-      action: scores.filter((s) => s.importance >= 0.5 && s.score < avgMetricScore),
-      keep: scores.filter((s) => s.importance >= 0.5 && s.score >= avgMetricScore),
-      monitor: scores.filter((s) => s.importance < 0.5 && s.score < avgMetricScore),
-      low: scores.filter((s) => s.importance < 0.5 && s.score >= avgMetricScore),
+      action: scores.filter(
+        (s) => s.n > 0 && s.importance >= 0.5 && s.score < avgMetricScore,
+      ),
+      keep: scores.filter(
+        (s) => s.n > 0 && s.importance >= 0.5 && s.score >= avgMetricScore,
+      ),
+      monitor: scores.filter(
+        (s) => s.n > 0 && s.importance < 0.5 && s.score < avgMetricScore,
+      ),
+      low: scores.filter(
+        (s) => s.n > 0 && s.importance < 0.5 && s.score >= avgMetricScore,
+      ),
     };
 
-    const corrMatrix = ENG_METRICS.map((a) =>
-      ENG_METRICS.map((b) => {
+    const corrMatrix = metrics.map((a) =>
+      metrics.map((b) => {
         const xs: number[] = [];
         const ys: number[] = [];
         rows.forEach((r) => {
@@ -379,7 +494,7 @@ export class AnalyticsService {
 
     const heatmap = {
       departments: [...new Set(rows.map((r) => r.dept))],
-      metrics: ENG_METRICS.map((m) => {
+      metrics: metrics.map((m) => {
         const cells = [...new Set(rows.map((r) => r.dept))].map((d) => {
           const vals = rows
             .filter((r) => r.dept === d && r.metrics[m] !== undefined)
@@ -393,11 +508,15 @@ export class AnalyticsService {
       }),
     };
 
-    const alpha = [
-      { name: 'Вовлечённость', items: ENG_METRICS },
-      { name: 'Лояльность', items: LOY_METRICS },
-      { name: 'Удовлетворённость', items: SAT_METRICS },
-    ].map((def) => {
+    const usesClassicEng = ENG_METRICS.every((m) => metrics.includes(m));
+    const alphaDefs = usesClassicEng
+      ? [
+          { name: 'Вовлечённость', items: ENG_METRICS },
+          { name: 'Лояльность', items: LOY_METRICS },
+          { name: 'Удовлетворённость', items: SAT_METRICS },
+        ]
+      : [{ name: 'Метрики опроса', items: metrics }];
+    const alpha = alphaDefs.map((def) => {
       const scoreRows = rows
         .map((r) => {
           const row: Record<string, number> = {};
@@ -408,7 +527,8 @@ export class AnalyticsService {
           return row;
         })
         .filter((r): r is Record<string, number> => r != null);
-      const value = cronbachAlpha(scoreRows, def.items);
+      const value =
+        def.items.length >= 2 ? cronbachAlpha(scoreRows, def.items) : 0;
       return {
         name: def.name,
         metricsCount: def.items.length,
@@ -421,7 +541,7 @@ export class AnalyticsService {
     if (weeks.length >= 4) {
       const last2 = weeks.slice(-2);
       const prev2 = weeks.slice(-4, -2);
-      ENG_METRICS.forEach((m) => {
+      metrics.forEach((m) => {
         const lastVals: number[] = [];
         const prevVals: number[] = [];
         rows.forEach((r) => {
@@ -457,7 +577,13 @@ export class AnalyticsService {
         }
       });
     }
-    if (N < 30) {
+    if (N < 5) {
+      alerts.push({
+        level: 'warn',
+        title: 'Недостаточно данных для драйверов',
+        text: `n = ${N}. Корреляции с eNPS считаются при ≥ 5 ответах с eNPS.`,
+      });
+    } else if (N < 30) {
       alerts.push({
         level: 'warn',
         title: 'Малая выборка',
