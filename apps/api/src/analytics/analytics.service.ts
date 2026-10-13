@@ -121,6 +121,32 @@ export class AnalyticsService {
     };
   }
 
+  async exportSurvey(organizationId: string, surveyId: string) {
+    const surveys = await this.prisma.survey.findMany({
+      where: { organizationId, id: surveyId },
+      include: {
+        questions: { orderBy: { sortOrder: 'asc' } },
+        responses: {
+          include: {
+            answers: true,
+            employee: {
+              select: { id: true, fullName: true, email: true },
+            },
+            link: { select: { type: true } },
+          },
+        },
+      },
+    });
+    if (!surveys.length) {
+      throw new NotFoundException('Опрос не найден');
+    }
+    const rows = this.buildRows(surveys);
+    return {
+      title: surveys[0].title,
+      responses: this.buildRecentResponses(surveys, rows, 100000),
+    };
+  }
+
   private isSkippedDriverMetric(metric: string) {
     return SKIP_DRIVER_METRICS.has(metric.trim().toLowerCase());
   }
@@ -805,6 +831,7 @@ export class AnalyticsService {
       }>;
     }>,
     rows: AnalyticRow[],
+    limit = 30,
   ) {
     const indexesById = new Map(rows.map((r) => [r.id, r]));
     const flat = surveys.flatMap((survey) =>
@@ -816,7 +843,7 @@ export class AnalyticsService {
         (a, b) =>
           b.response.completedAt.getTime() - a.response.completedAt.getTime(),
       )
-      .slice(0, 30)
+      .slice(0, limit)
       .map(({ survey, response }) => {
         const canIdentify =
           survey.adminCanIdentifyRespondents &&

@@ -6,6 +6,7 @@ import { useAuth } from '../auth';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CustomCheckbox } from '../components/CustomCheckbox';
 import { coverSrc } from '../coverPresets';
+import { downloadSurveyExcel, type ExportPayload } from '../exportSurveyExcel';
 import { statusBadgeClass, statusLabel } from '../statusLabels';
 
 type Survey = {
@@ -59,6 +60,7 @@ export function SurveyDetailPage() {
   const [responsesBusy, setResponsesBusy] = useState(false);
   const [statusBusy, setStatusBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [copiedPersonalId, setCopiedPersonalId] = useState<string | null>(null);
 
   const load = async () => {
@@ -139,6 +141,23 @@ export function SurveyDetailPage() {
     });
     setSelected([]);
     await load();
+  };
+
+  const exportExcel = async () => {
+    if (!organizationId || !id || exporting) return;
+    setExporting(true);
+    setError('');
+    try {
+      const payload = await api<ExportPayload>(
+        `/organizations/${organizationId}/analytics/export?surveyId=${id}`,
+        { token, organizationId },
+      );
+      await downloadSurveyExcel(payload);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Не удалось выгрузить Excel');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const copyLink = async () => {
@@ -278,6 +297,15 @@ export function SurveyDetailPage() {
               <Link className="btn btn-secondary" to={`/surveys/${survey.id}/edit`}>
                 Редактировать
               </Link>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={exporting}
+                onClick={() => void exportExcel()}
+              >
+                <img src="/excel.svg" alt="" width={18} height={18} />
+                {exporting ? 'Excel…' : 'Excel'}
+              </button>
               {survey.status !== 'DRAFT' && (
                 <button
                   className="btn btn-secondary"

@@ -13,6 +13,7 @@ import { Line } from 'react-chartjs-2';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { CustomSelect } from '../components/CustomSelect';
+import { downloadSurveyExcel, type ExportPayload } from '../exportSurveyExcel';
 import './analytics.css';
 
 ChartJS.register(
@@ -157,6 +158,7 @@ export function AnalyticsPage() {
   const [expandedResponseId, setExpandedResponseId] = useState<string | null>(
     null,
   );
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!organizationId) return;
@@ -174,6 +176,20 @@ export function AnalyticsPage() {
     if (!data) return [];
     return data.segments.filter((s) => !deptFilter || s.name === deptFilter);
   }, [data, deptFilter]);
+
+  const exportExcel = async () => {
+    if (!organizationId || !surveyId || exporting) return;
+    setExporting(true);
+    try {
+      const payload = await api<ExportPayload>(
+        `/organizations/${organizationId}/analytics/export?surveyId=${surveyId}`,
+        { token, organizationId },
+      );
+      await downloadSurveyExcel(payload);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const exportInsights = () => {
     if (!data) return;
@@ -250,6 +266,16 @@ export function AnalyticsPage() {
               ...data.surveys.map((s) => ({ value: s.id, label: s.title })),
             ]}
           />
+          <button
+            className="btn btn-secondary"
+            type="button"
+            disabled={!surveyId || exporting}
+            title={surveyId ? 'Скачать Excel' : 'Сначала выберите опрос'}
+            onClick={() => void exportExcel()}
+          >
+            <img src="/excel.svg" alt="" width={18} height={18} />
+            {exporting ? 'Excel…' : 'Excel'}
+          </button>
           <button className="btn btn-secondary" onClick={exportInsights}>
             Экспорт
           </button>
