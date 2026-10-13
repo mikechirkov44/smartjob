@@ -417,4 +417,28 @@ export class SurveysService {
       };
     });
   }
+
+  async removeResponse(
+    organizationId: string,
+    surveyId: string,
+    responseId: string,
+  ) {
+    await this.getOne(organizationId, surveyId);
+    const response = await this.prisma.response.findFirst({
+      where: { id: responseId, surveyId },
+    });
+    if (!response) {
+      throw new NotFoundException('Ответ не найден');
+    }
+    await this.prisma.response.delete({ where: { id: responseId } });
+    return { ok: true };
+  }
+
+  async clearResponses(organizationId: string, surveyId: string) {
+    await this.getOne(organizationId, surveyId);
+    const result = await this.prisma.response.deleteMany({
+      where: { surveyId },
+    });
+    return { ok: true, deleted: result.count };
+  }
 }

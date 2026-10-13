@@ -101,4 +101,23 @@ export class SurveysController {
   ) {
     return this.service.listResponses(organizationId, id);
   }
+
+  @Roles(OrgRole.HR)
+  @Delete(':id/responses/:responseId')
+  removeResponse(
+    @Param('organizationId') organizationId: string,
+    @Param('id') id: string,
+    @Param('responseId') responseId: string,
+  ) {
+    return this.service.removeResponse(organizationId, id, responseId);
+  }
+
+  @Roles(OrgRole.HR)
+  @Delete(':id/responses')
+  clearResponses(
+    @Param('organizationId') organizationId: string,
+    @Param('id') id: string,
+  ) {
+    return this.service.clearResponses(organizationId, id);
+  }
 }

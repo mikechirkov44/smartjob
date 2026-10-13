@@ -52,6 +52,11 @@ export function SurveyDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmDraft, setConfirmDraft] = useState(false);
+  const [confirmClearResponses, setConfirmClearResponses] = useState(false);
+  const [confirmDeleteResponseId, setConfirmDeleteResponseId] = useState<
+    string | null
+  >(null);
+  const [responsesBusy, setResponsesBusy] = useState(false);
   const [statusBusy, setStatusBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -157,6 +162,43 @@ export function SurveyDetailPage() {
       setError(e instanceof ApiError ? e.message : 'Не удалось удалить');
       setDeleting(false);
       setConfirmDelete(false);
+    }
+  };
+
+  const removeResponse = async (responseId: string) => {
+    if (!organizationId || !id) return;
+    setResponsesBusy(true);
+    setError('');
+    try {
+      await api(
+        `/organizations/${organizationId}/surveys/${id}/responses/${responseId}`,
+        { token, organizationId, method: 'DELETE' },
+      );
+      setConfirmDeleteResponseId(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Не удалось удалить ответ');
+    } finally {
+      setResponsesBusy(false);
+    }
+  };
+
+  const clearResponses = async () => {
+    if (!organizationId || !id) return;
+    setResponsesBusy(true);
+    setError('');
+    try {
+      await api(`/organizations/${organizationId}/surveys/${id}/responses`, {
+        token,
+        organizationId,
+        method: 'DELETE',
+      });
+      setConfirmClearResponses(false);
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Не удалось очистить ответы');
+    } finally {
+      setResponsesBusy(false);
     }
   };
 
@@ -362,31 +404,60 @@ export function SurveyDetailPage() {
       </div>
 
       <div className="card table-wrap">
-        <h3 style={{ marginBottom: 10 }}>Ответы</h3>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Дата</th>
-              <th>Отдел</th>
-              <th>eNPS</th>
-              <th>Респондент</th>
-            </tr>
-          </thead>
-          <tbody>
-            {responses.map((r) => (
-              <tr key={r.id}>
-                <td>{new Date(r.completedAt).toLocaleString('ru-RU')}</td>
-                <td>{r.departmentName || '—'}</td>
-                <td>{r.enps ?? '—'}</td>
-                <td>
-                  {r.anonymous
-                    ? 'Анонимно'
-                    : r.employee?.fullName || '—'}
-                </td>
+        <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
+          <h3 style={{ margin: 0 }}>Ответы ({responses.length})</h3>
+          {responses.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              disabled={responsesBusy}
+              onClick={() => setConfirmClearResponses(true)}
+            >
+              Очистить все
+            </button>
+          )}
+        </div>
+        {responses.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>
+            Ответов пока нет
+          </p>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Отдел</th>
+                <th>eNPS</th>
+                <th>Респондент</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {responses.map((r) => (
+                <tr key={r.id}>
+                  <td>{new Date(r.completedAt).toLocaleString('ru-RU')}</td>
+                  <td>{r.departmentName || '—'}</td>
+                  <td>{r.enps ?? '—'}</td>
+                  <td>
+                    {r.anonymous
+                      ? 'Анонимно'
+                      : r.employee?.fullName || '—'}
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      disabled={responsesBusy}
+                      onClick={() => setConfirmDeleteResponseId(r.id)}
+                    >
+                      Удалить
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <ConfirmDialog
@@ -418,6 +489,38 @@ export function SurveyDetailPage() {
           if (!statusBusy) setConfirmDraft(false);
         }}
         onConfirm={() => void setStatus('DRAFT')}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirmDeleteResponseId)}
+        danger
+        busy={responsesBusy}
+        title="Удалить ответ?"
+        message="Ответ будет удалён безвозвратно. Если он был по персональной ссылке, сотрудник сможет пройти опрос снова."
+        confirmLabel="Удалить"
+        cancelLabel="Отмена"
+        onCancel={() => {
+          if (!responsesBusy) setConfirmDeleteResponseId(null);
+        }}
+        onConfirm={() => {
+          if (confirmDeleteResponseId) {
+            void removeResponse(confirmDeleteResponseId);
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmClearResponses}
+        danger
+        busy={responsesBusy}
+        title="Очистить все ответы?"
+        message={`Удалить все ответы по опросу «${survey.title}» (${responses.length})? Это действие нельзя отменить. Аналитика обнулится.`}
+        confirmLabel="Очистить все"
+        cancelLabel="Отмена"
+        onCancel={() => {
+          if (!responsesBusy) setConfirmClearResponses(false);
+        }}
+        onConfirm={() => void clearResponses()}
       />
     </div>
   );
