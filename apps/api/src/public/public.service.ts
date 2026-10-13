@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { QuestionType, SurveyStatus } from '@prisma/client';
+import { LinkType, QuestionType, SurveyStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   isGridColumns,
@@ -36,6 +36,24 @@ export class PublicService {
     }
   }
 
+  /** Successful completion = at least one answer. Empty shells are cleaned up. */
+  private async personalLinkCompleted(linkId: string): Promise<boolean> {
+    await this.prisma.response.deleteMany({
+      where: {
+        linkId,
+        answers: { none: {} },
+      },
+    });
+    const completed = await this.prisma.response.findFirst({
+      where: {
+        linkId,
+        answers: { some: {} },
+      },
+      select: { id: true },
+    });
+    return Boolean(completed);
+  }
+
   async getByToken(token: string) {
     const link = await this.prisma.surveyLink.findUnique({
       where: { token },
@@ -59,8 +77,14 @@ export class PublicService {
     const survey = link.survey;
     this.assertSurveyOpen(survey);
 
+    const alreadyCompleted =
+      link.type === LinkType.PERSONAL
+        ? await this.personalLinkCompleted(link.id)
+        : false;
+
     return {
       token: link.token,
+      alreadyCompleted,
       organizationName: survey.organization.name,
       survey: {
         id: survey.id,
@@ -70,20 +94,22 @@ export class PublicService {
         template: survey.template,
         includeEnps: survey.includeEnps,
         hideQuestionCategory: survey.hideQuestionCategory,
-        questions: survey.questions.map((q) => ({
-          id: q.id,
-          text: q.text,
-          metric: q.metric,
-          category: q.category,
-          type: q.type,
-          scaleMax: q.scaleMax,
-          scaleMinLabel: q.scaleMinLabel,
-          scaleMaxLabel: q.scaleMaxLabel,
-          gridRows: q.gridRows,
-          gridColumns: q.gridColumns,
-          requireAllRows: q.requireAllRows,
-          sortOrder: q.sortOrder,
-        })),
+        questions: alreadyCompleted
+          ? []
+          : survey.questions.map((q) => ({
+              id: q.id,
+              text: q.text,
+              metric: q.metric,
+              category: q.category,
+              type: q.type,
+              scaleMax: q.scaleMax,
+              scaleMinLabel: q.scaleMinLabel,
+              scaleMaxLabel: q.scaleMaxLabel,
+              gridRows: q.gridRows,
+              gridColumns: q.gridColumns,
+              requireAllRows: q.requireAllRows,
+              sortOrder: q.sortOrder,
+            })),
       },
       anonymousNotice:
         'Опрос анонимный для участников. Ваши ответы не будут показаны коллегам.',
@@ -96,7 +122,6 @@ export class PublicService {
       include: {
         survey: { include: { questions: true } },
         employee: { include: { department: true } },
-        responses: { select: { id: true }, take: 1 },
       },
     });
 
@@ -107,8 +132,13 @@ export class PublicService {
     const survey = link.survey;
     this.assertSurveyOpen(survey);
 
-    if (link.type === 'PERSONAL' && link.responses.length > 0) {
-      throw new BadRequestException('Вы уже прошли этот опрос');
+    if (
+      link.type === LinkType.PERSONAL &&
+      (await this.personalLinkCompleted(link.id))
+    ) {
+      throw new BadRequestException(
+        'Вы уже прошли этот опрос. Повторное прохождение возможно только после удаления результата администратором.',
+      );
     }
 
     const questionMap = new Map(survey.questions.map((q) => [q.id, q]));

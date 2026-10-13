@@ -28,6 +28,7 @@ type AnswerValue = {
 type Payload = {
   organizationName: string;
   anonymousNotice: string;
+  alreadyCompleted?: boolean;
   survey: {
     id: string;
     title: string;
@@ -165,6 +166,23 @@ export function PublicSurveyPage() {
           <div className="thankyou-body">
             <h1>Спасибо!</h1>
             <p>Ваши ответы сохранены. Опрос анонимный для коллег.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (data.alreadyCompleted) {
+    return (
+      <div className="public-wrap">
+        <div className="public-card thankyou">
+          <img src="/illustrations/celebrate.svg" alt="" className="cover-img" />
+          <div className="thankyou-body">
+            <h1>Опрос уже пройден</h1>
+            <p>
+              Вы уже отправили ответы по этой ссылке. Пройти ещё раз можно только
+              после того, как администратор удалит ваш результат.
+            </p>
           </div>
         </div>
       </div>

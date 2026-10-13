@@ -25,6 +25,7 @@ type SurveyPayload = {
   hideQuestionCategory?: boolean;
   adminCanIdentifyRespondents: boolean;
   closesAt?: string | null;
+  _count?: { responses: number };
   questions: Array<{
     id: string;
     text: string;
@@ -56,6 +57,7 @@ export function SurveyEditPage() {
   const [form, setForm] = useState<SurveyFormState | null>(null);
   const [questions, setQuestions] = useState<EditorQuestion[]>([emptyQuestion()]);
   const [status, setStatus] = useState('DRAFT');
+  const [responseCount, setResponseCount] = useState(0);
 
   useEffect(() => {
     if (!organizationId || !id) return;
@@ -65,6 +67,7 @@ export function SurveyEditPage() {
     })
       .then((s) => {
         setStatus(s.status);
+        setResponseCount(s._count?.responses ?? 0);
         setForm({
           title: s.title,
           description: s.description || '',
@@ -134,6 +137,7 @@ export function SurveyEditPage() {
         initialQuestions={questions}
         allowQuestionEdit
         questionsLocked={status !== 'DRAFT'}
+        responseCount={responseCount}
         submitLabel="Сохранить"
         onSuccess={(surveyId) => navigate(`/surveys/${surveyId}`)}
       />

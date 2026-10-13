@@ -268,6 +268,7 @@ export class SurveysService {
         await tx.answer.deleteMany({
           where: { question: { surveyId: id } },
         });
+        await tx.response.deleteMany({ where: { surveyId: id } });
         await tx.surveyQuestion.deleteMany({ where: { surveyId: id } });
         const includeEnps = dto.includeEnps ?? survey.includeEnps;
         const questions = this.resolveTemplateQuestions(

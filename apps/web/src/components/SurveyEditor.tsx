@@ -14,6 +14,7 @@ import {
   QuestionKind,
   toApiQuestion,
 } from '../questionOptions';
+import { ConfirmDialog } from './ConfirmDialog';
 import { CustomCheckbox } from './CustomCheckbox';
 import { CustomDateTimePicker } from './CustomDateTimePicker';
 import { CustomSelect } from './CustomSelect';
@@ -37,6 +38,7 @@ type Props = {
   surveyId?: string;
   allowQuestionEdit?: boolean;
   questionsLocked?: boolean;
+  responseCount?: number;
   submitLabel: string;
   onSuccess: (surveyId: string) => void;
 };
@@ -62,6 +64,7 @@ export function SurveyEditor({
   surveyId,
   allowQuestionEdit = true,
   questionsLocked = false,
+  responseCount = 0,
   submitLabel,
   onSuccess,
 }: Props) {
@@ -69,10 +72,16 @@ export function SurveyEditor({
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [confirmSaveQuestions, setConfirmSaveQuestions] = useState(false);
   const [form, setForm] = useState<SurveyFormState>(initialForm);
   const [questions, setQuestions] = useState<EditorQuestion[]>(initialQuestions);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const willReplaceQuestions =
+    mode === 'edit' && allowQuestionEdit && !questionsLocked;
+  const warnAboutResponses = willReplaceQuestions && responseCount > 0;
 
   const updateQuestion = (idx: number, patch: Partial<EditorQuestion>) => {
     setQuestions((list) => list.map((q, i) => (i === idx ? { ...q, ...patch } : q)));
@@ -134,10 +143,10 @@ export function SurveyEditor({
     }
   };
 
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const saveSurvey = async () => {
     if (!organizationId) return;
     setError('');
+    setSaving(true);
     try {
       const body: Record<string, unknown> = {
         title: form.title,
@@ -164,7 +173,7 @@ export function SurveyEditor({
         return;
       }
 
-      if (allowQuestionEdit && !questionsLocked) {
+      if (willReplaceQuestions) {
         body.questions = questions.filter((q) => q.text.trim()).map(toApiQuestion);
       }
       await api(`/organizations/${organizationId}/surveys/${surveyId}`, {
@@ -173,10 +182,24 @@ export function SurveyEditor({
         method: 'PATCH',
         body,
       });
+      setConfirmSaveQuestions(false);
       onSuccess(surveyId!);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Ошибка сохранения');
+      setConfirmSaveQuestions(false);
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!organizationId || saving) return;
+    if (warnAboutResponses) {
+      setConfirmSaveQuestions(true);
+      return;
+    }
+    await saveSurvey();
   };
 
   const coverPresetLabel =
@@ -184,7 +207,15 @@ export function SurveyEditor({
     (isUploadedCover(form.coverImage) ? 'Свой файл' : 'Обложка');
 
   return (
+    <>
     <form className="card stack survey-editor" onSubmit={(e) => void onSubmit(e)}>
+      {warnAboutResponses && (
+        <div className="error" role="status">
+          По опросу уже есть ответы: {responseCount}. Сохранение состава вопросов
+          удалит все результаты; сотрудники с персональными ссылками смогут пройти
+          опрос заново.
+        </div>
+      )}
       <div className="survey-editor-section">
         <h3 className="survey-editor-section-title">Основное</h3>
         <div className="field">
@@ -638,10 +669,25 @@ export function SurveyEditor({
 
       {error && <div className="error">{error}</div>}
       <div className="survey-editor-actions">
-        <button className="btn btn-primary" disabled={uploading}>
-          {submitLabel}
+        <button className="btn btn-primary" disabled={uploading || saving}>
+          {saving ? 'Сохранение…' : submitLabel}
         </button>
       </div>
     </form>
+
+    <ConfirmDialog
+      open={confirmSaveQuestions}
+      danger
+      busy={saving}
+      title="Удалить все ответы?"
+      message={`По опросу уже собрано ответов: ${responseCount}. Сохранение нового состава вопросов удалит все результаты безвозвратно. Аналитика обнулится. Продолжить?`}
+      confirmLabel="Сохранить и удалить ответы"
+      cancelLabel="Отмена"
+      onCancel={() => {
+        if (!saving) setConfirmSaveQuestions(false);
+      }}
+      onConfirm={() => void saveSurvey()}
+    />
+    </>
   );
 }
