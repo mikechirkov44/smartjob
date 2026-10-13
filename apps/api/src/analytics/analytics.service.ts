@@ -63,7 +63,7 @@ type AnalyticRow = {
   date: string;
   dept: string;
   grade: string;
-  enps: number;
+  enps: number | null;
   engagementIndex: number;
   loyaltyIndex: number;
   satisfactionIndex: number;
@@ -165,9 +165,9 @@ export class AnalyticsService {
   }
 
   /**
-   * Single FULL → classic 10 engagement metrics.
-   * Single PULSE / CUSTOM / WORK_CONDITIONS → metrics from that survey.
-   * Several surveys / «all» → classic Full set only (avoid huge mixed matrices).
+   * Classic Full metrics when the survey still looks like Full.
+   * Otherwise (edited Full / Pulse / Custom / Work conditions) → question metrics.
+   * Several surveys / «all» → classic Full set only.
    */
   private resolveDriverMetrics(
     surveys: Array<{
@@ -184,11 +184,19 @@ export class AnalyticsService {
 
     if (surveys.length === 1) {
       const survey = surveys[0];
-      if (survey.template === SurveyTemplate.FULL) {
+      const collected = this.collectScaleMetrics(survey.questions);
+      const classicOverlap = ENG_METRICS.filter((m) =>
+        collected.includes(m),
+      ).length;
+      const looksLikeClassicFull =
+        survey.template === SurveyTemplate.FULL && classicOverlap >= 6;
+
+      if (looksLikeClassicFull) {
         return [...ENG_METRICS];
       }
-      const collected = this.collectScaleMetrics(survey.questions);
-      return collected.length ? this.orderDriverMetrics(collected) : [...ENG_METRICS];
+      return collected.length
+        ? this.orderDriverMetrics(collected)
+        : [...ENG_METRICS];
     }
 
     return [...ENG_METRICS];
@@ -323,7 +331,9 @@ export class AnalyticsService {
             enps = a?.valueInt ?? null;
           }
         }
-        if (enps == null) continue;
+
+        // Need at least one scale/grid metric (or eNPS) to enter aggregates.
+        if (!Object.keys(metrics).length && enps == null) continue;
 
         rows.push({
           id: response.id,
@@ -345,9 +355,12 @@ export class AnalyticsService {
   private compute(rows: AnalyticRow[], driverMetrics: string[]) {
     const N = rows.length;
     const metrics = driverMetrics.length ? driverMetrics : [...ENG_METRICS];
+    const enpsRows = rows.filter(
+      (r): r is AnalyticRow & { enps: number } => r.enps != null,
+    );
 
     const driverResults = metrics.map((name) => {
-      const pairs = rows
+      const pairs = enpsRows
         .filter((r) => r.metrics[name] !== undefined)
         .map((r) => ({ x: r.metrics[name], y: r.enps }));
       const n = pairs.length;
@@ -359,7 +372,7 @@ export class AnalyticsService {
       return { name, r: round2(r), p: pearsonPValue(r, n), n };
     }).sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
 
-    const validRows = rows.filter((r) =>
+    const validRows = enpsRows.filter((r) =>
       metrics.every((m) => r.metrics[m] !== undefined),
     );
     const reg =
@@ -443,7 +456,7 @@ export class AnalyticsService {
       weekBuckets[k].eng.push(r.engagementIndex);
       weekBuckets[k].loy.push(r.loyaltyIndex);
       weekBuckets[k].sat.push(r.satisfactionIndex);
-      weekBuckets[k].enps.push(r.enps);
+      if (r.enps != null) weekBuckets[k].enps.push(r.enps);
     });
     const weeks = Object.keys(weekBuckets).sort().slice(-12);
     const dynamics = {
@@ -451,7 +464,11 @@ export class AnalyticsService {
       engagement: weeks.map((w) => round2(mean(weekBuckets[w].eng))),
       loyalty: weeks.map((w) => round2(mean(weekBuckets[w].loy))),
       satisfaction: weeks.map((w) => round2(mean(weekBuckets[w].sat))),
-      enps: weeks.map((w) => round2(mean(weekBuckets[w].enps))),
+      enps: weeks.map((w) =>
+        weekBuckets[w].enps.length
+          ? round2(mean(weekBuckets[w].enps))
+          : 0,
+      ),
     };
 
     const byDept: Record<
@@ -463,7 +480,7 @@ export class AnalyticsService {
       byDept[r.dept].eng.push(r.engagementIndex);
       byDept[r.dept].loy.push(r.loyaltyIndex);
       byDept[r.dept].sat.push(r.satisfactionIndex);
-      byDept[r.dept].enps.push(r.enps);
+      if (r.enps != null) byDept[r.dept].enps.push(r.enps);
     });
     const segments = Object.entries(byDept)
       .map(([name, v]) => ({
@@ -472,7 +489,7 @@ export class AnalyticsService {
         engagement: round2(mean(v.eng)),
         loyalty: round2(mean(v.loy)),
         satisfaction: round2(mean(v.sat)),
-        enps: round2(mean(v.enps)),
+        enps: v.enps.length ? round2(mean(v.enps)) : 0,
       }))
       .sort((a, b) => b.engagement - a.engagement);
 
@@ -487,10 +504,14 @@ export class AnalyticsService {
             .map((r) => r.metrics[m]);
           return { dept: d, value: vals.length ? round2(mean(vals)) : null };
         });
-        const rowAvg = mean(
-          cells.map((c) => c.value).filter((v): v is number => v != null),
-        );
-        return { name: m, cells, average: round2(rowAvg) };
+        const defined = cells
+          .map((c) => c.value)
+          .filter((v): v is number => v != null);
+        return {
+          name: m,
+          cells,
+          average: defined.length ? round2(mean(defined)) : null,
+        };
       }),
     };
 
@@ -563,11 +584,17 @@ export class AnalyticsService {
         }
       });
     }
-    if (N < 5) {
+    if (N === 0) {
       alerts.push({
         level: 'warn',
-        title: 'Недостаточно данных для драйверов',
-        text: `n = ${N}. Корреляции с eNPS считаются при ≥ 5 ответах с eNPS.`,
+        title: 'Нет данных для расчёта',
+        text: 'По выбранному опросу нет ответов со шкальными оценками.',
+      });
+    } else if (enpsRows.length < 5) {
+      alerts.push({
+        level: 'warn',
+        title: 'Недостаточно данных для драйверов eNPS',
+        text: `Ответов с eNPS: ${enpsRows.length}. Корреляции считаются при ≥ 5. Индексы и heatmap считаются по всем шкальным ответам (${N}).`,
       });
     } else if (N < 30) {
       alerts.push({
@@ -576,15 +603,21 @@ export class AnalyticsService {
         text: `n = ${N}. Для устойчивых выводов нужно ≥ 30 ответов.`,
       });
     }
-    const overallEnps = mean(rows.map((r) => r.enps));
-    if (N && overallEnps < 6) {
+    const overallEnps = enpsRows.length
+      ? mean(enpsRows.map((r) => r.enps))
+      : null;
+    if (enpsRows.length && overallEnps != null && overallEnps < 6) {
       alerts.push({
         level: 'danger',
         title: 'Низкий средний eNPS',
         text: `Средний eNPS = ${overallEnps.toFixed(1)}. Требуется программа удержания.`,
       });
     }
-    if (driverResults[0] && Math.abs(driverResults[0].r) > 0.4) {
+    if (
+      enpsRows.length >= 5 &&
+      driverResults[0] &&
+      Math.abs(driverResults[0].r) > 0.4
+    ) {
       const top = driverResults[0];
       const topScore = scores.find((s) => s.name === top.name);
       if (topScore && topScore.score < avgMetricScore) {
@@ -607,19 +640,20 @@ export class AnalyticsService {
       enpsTrend = dynamics.enps.at(-1)! - dynamics.enps.at(-2)!;
     }
 
-    const promoters = rows.filter((r) => r.enps >= 9).length;
-    const detractors = rows.filter((r) => r.enps <= 6).length;
+    const promoters = enpsRows.filter((r) => r.enps >= 9).length;
+    const detractors = enpsRows.filter((r) => r.enps <= 6).length;
 
     return {
       N,
+      enpsN: enpsRows.length,
       avgEng: round2(mean(rows.map((r) => r.engagementIndex))),
       avgLoy: round2(mean(rows.map((r) => r.loyaltyIndex))),
       avgSat: round2(mean(rows.map((r) => r.satisfactionIndex))),
-      avgEnps: round2(overallEnps),
+      avgEnps: overallEnps == null ? null : round2(overallEnps),
       promoters,
       detractors,
-      enpsScore: N
-        ? Math.round(((promoters - detractors) / N) * 100)
+      enpsScore: enpsRows.length
+        ? Math.round(((promoters - detractors) / enpsRows.length) * 100)
         : 0,
       engTrend: round2(engTrend),
       loyTrend: round2(loyTrend),

@@ -412,7 +412,22 @@ export function SurveyDetailPage() {
                           </button>
                         </div>
                       </td>
-                      <td>{l._count.responses > 0 ? 'да' : 'нет'}</td>
+                      <td>
+                        {l._count.responses > 0 ? (
+                          <span className="answered-check" title="Пройден" aria-label="Пройден">
+                            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden>
+                              <path
+                                fill="currentColor"
+                                d="M6.5 11.2 3.3 8l1.1-1.1 2.1 2.1 4.6-4.6L12.2 5.5 6.5 11.2z"
+                              />
+                            </svg>
+                          </span>
+                        ) : (
+                          <span className="muted" title="Не пройден">
+                            —
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

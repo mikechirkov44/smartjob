@@ -507,6 +507,17 @@ button {
   color: #047857;
 }
 
+.answered-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #d1fae5;
+  color: #047857;
+}
+
 /* Motion */
 .page-enter {
   animation: rise 0.45s var(--ease-out);

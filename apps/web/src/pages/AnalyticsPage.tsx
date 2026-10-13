@@ -27,10 +27,11 @@ ChartJS.register(
 
 type Analytics = {
   N: number;
+  enpsN?: number;
   avgEng: number;
   avgLoy: number;
   avgSat: number;
-  avgEnps: number;
+  avgEnps: number | null;
   promoters: number;
   enpsScore: number;
   engTrend: number;
@@ -69,7 +70,7 @@ type Analytics = {
     departments: string[];
     metrics: Array<{
       name: string;
-      average: number;
+      average: number | null;
       cells: Array<{ dept: string; value: number | null }>;
     }>;
   };
@@ -178,7 +179,7 @@ export function AnalyticsPage() {
     if (!data) return;
     let t = 'SmartJob Analytics — экспорт\n';
     t += `Ответов: ${data.N}\n`;
-    t += `eNPS: ${data.avgEnps} (score ${data.enpsScore})\n`;
+    t += `eNPS: ${data.avgEnps ?? '—'} (score ${data.enpsScore})\n`;
     t += `Вовлечённость: ${data.avgEng}\nЛояльность: ${data.avgLoy}\nУдовлетворённость: ${data.avgSat}\n\n`;
     t += 'ТОП ДРАЙВЕРОВ eNPS:\n';
     data.driverResults.slice(0, 10).forEach((d, i) => {
@@ -221,7 +222,8 @@ export function AnalyticsPage() {
       m.length <= 8 ? m : `${m.slice(0, 7)}…`,
     ]),
   );
-  const driversReady = data.N >= 5 && data.driverResults.some((d) => d.n >= 5);
+  const enpsN = data.enpsN ?? data.N;
+  const driversReady = enpsN >= 5 && data.driverResults.some((d) => d.n >= 5);
   const metricCount = (data.engMetrics || []).length;
   const hasCorrSignal = (data.corrMatrix || []).some((row) =>
     (row || []).some((v) => Math.abs(v) > 0),
@@ -276,13 +278,42 @@ export function AnalyticsPage() {
 
       {tab === 'overview' && (
         <>
+          {data.N === 0 && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <p className="muted" style={{ margin: 0 }}>
+                По выбранному опросу нет ответов со шкальными оценками — агрегаты
+                пустые. Проверьте, что опрос проходили и ответы не были удалены
+                при правке вопросов.
+              </p>
+            </div>
+          )}
+          {data.N > 0 && enpsN === 0 && (
+            <div className="card" style={{ marginBottom: 16 }}>
+              <p className="muted" style={{ margin: 0 }}>
+                В опросе нет eNPS: индексы и heatmap считаются по шкалам, а блок
+                eNPS/драйверы eNPS будет пустым, пока не добавите вопрос eNPS и
+                новые ответы.
+              </p>
+            </div>
+          )}
           <div className="kpi-grid">
             <div className="kpi amber">
               <div className="kpi-label">Средний eNPS</div>
-              <div className="kpi-val">{data.avgEnps.toFixed(1)}</div>
+              <div className="kpi-val">
+                {data.avgEnps == null ? '—' : data.avgEnps.toFixed(1)}
+              </div>
               <div className="kpi-sub">
-                <Trend delta={data.enpsTrend} /> промоутеров:{' '}
-                {data.N ? Math.round((data.promoters / data.N) * 100) : 0}%
+                {data.avgEnps == null ? (
+                  'нет данных eNPS'
+                ) : (
+                  <>
+                    <Trend delta={data.enpsTrend} /> промоутеров:{' '}
+                    {enpsN
+                      ? Math.round((data.promoters / enpsN) * 100)
+                      : 0}
+                    %
+                  </>
+                )}
               </div>
             </div>
             <div className="kpi">
@@ -372,9 +403,13 @@ export function AnalyticsPage() {
                       ))}
                       <td
                         className="value"
-                        style={{ background: scoreColor(m.average || 0) }}
+                        style={{
+                          background:
+                            m.average == null ? '#e2e8f0' : scoreColor(m.average),
+                          color: m.average == null ? 'var(--muted)' : undefined,
+                        }}
                       >
-                        {(m.average || 0).toFixed(2)}
+                        {m.average == null ? '—' : m.average.toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -421,12 +456,16 @@ export function AnalyticsPage() {
                   val: data.avgSat,
                   bm: data.benchmarks['Удовлетворённость'],
                 },
-                {
-                  name: 'eNPS',
-                  val: (data.avgEnps / 10) * 5,
-                  bm: (data.benchmarks.eNPS / 10) * 5,
-                  label: data.avgEnps.toFixed(1),
-                },
+                ...(data.avgEnps == null
+                  ? []
+                  : [
+                      {
+                        name: 'eNPS',
+                        val: (data.avgEnps / 10) * 5,
+                        bm: (data.benchmarks.eNPS / 10) * 5,
+                        label: data.avgEnps.toFixed(1),
+                      },
+                    ]),
               ].map((r) => (
                 <div className="bench-row" key={r.name}>
                   <div className="bench-name">{r.name}</div>
