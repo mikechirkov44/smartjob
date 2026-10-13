@@ -467,14 +467,16 @@ button {
 }
 
 .personal-link-cell {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  max-width: 100%;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
 }
 
 .personal-link-cell a {
   min-width: 0;
+  flex: 1;
 }
 
 .icon-copy-btn {
