@@ -97,6 +97,10 @@ type Analytics = {
       type: string;
       metric?: string | null;
       value: string;
+      valueInt?: number | null;
+      valueText?: string | null;
+      scaleMax?: number | null;
+      gridParts?: Array<{ row: string; column: string }>;
     }>;
   }>;
   surveys: Array<{ id: string; title: string }>;
@@ -124,6 +128,22 @@ function Trend({ delta }: { delta: number }) {
       {up ? '↑' : '↓'} {Math.abs(delta).toFixed(2)}
     </span>
   );
+}
+
+function scoreTone(value: number, scaleMax = 5) {
+  if (scaleMax >= 10) {
+    if (value >= 9) return scoreColor(5);
+    if (value >= 7) return scoreColor(4);
+    if (value >= 5) return scoreColor(3);
+    if (value >= 3) return scoreColor(2.5);
+    return scoreColor(1.5);
+  }
+  return scoreColor(value);
+}
+
+function formatIndex(value: number | null | undefined) {
+  if (value == null) return '—';
+  return value.toFixed(2);
 }
 
 export function AnalyticsPage() {
@@ -494,24 +514,123 @@ export function AnalyticsPage() {
                       {open && (
                         <tr className="analytics-response-detail">
                           <td colSpan={8}>
-                            {r.surveyTitle && (
-                              <div className="muted" style={{ marginBottom: 8 }}>
-                                Опрос: {r.surveyTitle}
+                            <div className="analytics-response-panel">
+                              {r.surveyTitle && (
+                                <div className="analytics-response-survey">
+                                  Опрос: {r.surveyTitle}
+                                </div>
+                              )}
+                              <div className="analytics-response-chips">
+                                <span className="analytics-chip">
+                                  Вовлеч.
+                                  <strong
+                                    style={{
+                                      color:
+                                        r.engagement == null
+                                          ? undefined
+                                          : scoreColor(r.engagement),
+                                    }}
+                                  >
+                                    {formatIndex(r.engagement)}
+                                  </strong>
+                                </span>
+                                <span className="analytics-chip">
+                                  Лояльн.
+                                  <strong
+                                    style={{
+                                      color:
+                                        r.loyalty == null
+                                          ? undefined
+                                          : scoreColor(r.loyalty),
+                                    }}
+                                  >
+                                    {formatIndex(r.loyalty)}
+                                  </strong>
+                                </span>
+                                <span className="analytics-chip">
+                                  Удовл.
+                                  <strong
+                                    style={{
+                                      color:
+                                        r.satisfaction == null
+                                          ? undefined
+                                          : scoreColor(r.satisfaction),
+                                    }}
+                                  >
+                                    {formatIndex(r.satisfaction)}
+                                  </strong>
+                                </span>
+                                <span className="analytics-chip">
+                                  eNPS
+                                  <strong>{r.enps ?? '—'}</strong>
+                                </span>
                               </div>
-                            )}
-                            <ol className="analytics-answer-list">
-                              {(r.answers || []).map((a) => (
-                                <li key={a.questionId}>
-                                  <div className="analytics-answer-q">
-                                    {a.metric ? (
-                                      <span className="muted">{a.metric} — </span>
-                                    ) : null}
-                                    {a.text}
-                                  </div>
-                                  <div className="analytics-answer-a">{a.value}</div>
-                                </li>
-                              ))}
-                            </ol>
+                              <div className="analytics-answer-cards">
+                                {(r.answers || []).map((a) => {
+                                  const isText = a.type === 'TEXT';
+                                  const isGrid = a.type === 'GRID';
+                                  const scaleMax =
+                                    a.scaleMax ?? (a.type === 'ENPS' ? 10 : 5);
+                                  return (
+                                    <div
+                                      key={a.questionId}
+                                      className={`analytics-answer-card ${
+                                        isText ? 'text' : isGrid ? 'grid' : 'scale'
+                                      }`}
+                                    >
+                                      <div className="analytics-answer-card-main">
+                                        {a.metric ? (
+                                          <div className="analytics-answer-metric">
+                                            {a.metric}
+                                          </div>
+                                        ) : null}
+                                        <div className="analytics-answer-q">{a.text}</div>
+                                        {isText && (
+                                          <div className="analytics-answer-text">
+                                            {a.valueText || a.value || '—'}
+                                          </div>
+                                        )}
+                                        {isGrid && (
+                                          <div className="analytics-grid-table">
+                                            {(a.gridParts || []).length === 0 ? (
+                                              <div className="muted">—</div>
+                                            ) : (
+                                              (a.gridParts || []).map((part, i) => (
+                                                <div
+                                                  className="analytics-grid-row"
+                                                  key={`${a.questionId}-${i}`}
+                                                >
+                                                  <span>{part.row}</span>
+                                                  <strong>{part.column}</strong>
+                                                </div>
+                                              ))
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                      {!isText && !isGrid && (
+                                        <div
+                                          className="analytics-answer-score"
+                                          style={{
+                                            color:
+                                              a.valueInt == null
+                                                ? 'var(--muted)'
+                                                : scoreTone(a.valueInt, scaleMax),
+                                          }}
+                                        >
+                                          {a.valueInt ?? a.value}
+                                          {a.valueInt != null && (
+                                            <span className="analytics-answer-scale">
+                                              /{scaleMax}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           </td>
                         </tr>
                       )}

@@ -531,7 +531,7 @@ export class AnalyticsService {
     };
   }
 
-  private formatAnswerValue(
+  private formatAnswerDetail(
     question: {
       type: string;
       scaleMax: number;
@@ -545,43 +545,85 @@ export class AnalyticsService {
       valueText: string | null;
       valueJson?: Prisma.JsonValue | null;
     },
-  ): string {
+  ) {
     if (question.type === 'TEXT') {
-      return answer.valueText?.trim() || '—';
+      const text = answer.valueText?.trim() || '';
+      return {
+        value: text || '—',
+        valueInt: null as number | null,
+        valueText: text || null,
+        scaleMax: null as number | null,
+        gridParts: [] as Array<{ row: string; column: string }>,
+      };
     }
 
     if (question.type === 'GRID') {
       if (!isGridRows(question.gridRows) || !isGridColumns(question.gridColumns)) {
-        return '—';
+        return {
+          value: '—',
+          valueInt: null,
+          valueText: null,
+          scaleMax: null,
+          gridParts: [],
+        };
       }
       const gridAnswer = parseGridAnswer(answer.valueJson);
-      if (!gridAnswer) return '—';
+      if (!gridAnswer) {
+        return {
+          value: '—',
+          valueInt: null,
+          valueText: null,
+          scaleMax: null,
+          gridParts: [],
+        };
+      }
       const colById = new Map(question.gridColumns.map((c) => [c.id, c]));
-      const parts = question.gridRows
+      const gridParts = question.gridRows
         .map((row) => {
           const colId = gridAnswer[row.id];
           if (!colId) return null;
           const col = colById.get(colId);
           if (!col) return null;
-          return `${row.label}: ${col.label}`;
+          return { row: row.label, column: col.label };
         })
-        .filter((part): part is string => Boolean(part));
-      return parts.length ? parts.join('; ') : '—';
+        .filter((part): part is { row: string; column: string } => Boolean(part));
+      return {
+        value: gridParts.length
+          ? gridParts.map((p) => `${p.row}: ${p.column}`).join('; ')
+          : '—',
+        valueInt: null,
+        valueText: null,
+        scaleMax: null,
+        gridParts,
+      };
     }
 
-    if (answer.valueInt == null) return '—';
-    if (question.type === 'ENPS') {
-      return String(answer.valueInt);
+    if (answer.valueInt == null) {
+      return {
+        value: '—',
+        valueInt: null,
+        valueText: null,
+        scaleMax: null,
+        gridParts: [],
+      };
     }
 
-    const scaleMax = question.scaleMax === 10 ? 10 : 5;
+    const scaleMax = question.type === 'ENPS' ? 10 : question.scaleMax === 10 ? 10 : 5;
     const labels: string[] = [String(answer.valueInt)];
-    if (answer.valueInt === 1 && question.scaleMinLabel) {
-      labels.push(`(${question.scaleMinLabel})`);
-    } else if (answer.valueInt === scaleMax && question.scaleMaxLabel) {
-      labels.push(`(${question.scaleMaxLabel})`);
+    if (question.type !== 'ENPS') {
+      if (answer.valueInt === 1 && question.scaleMinLabel) {
+        labels.push(`(${question.scaleMinLabel})`);
+      } else if (answer.valueInt === scaleMax && question.scaleMaxLabel) {
+        labels.push(`(${question.scaleMaxLabel})`);
+      }
     }
-    return labels.join(' ');
+    return {
+      value: labels.join(' '),
+      valueInt: answer.valueInt,
+      valueText: null,
+      scaleMax,
+      gridParts: [],
+    };
   }
 
   private buildRecentResponses(
@@ -652,14 +694,21 @@ export class AnalyticsService {
           employee: canIdentify ? response.employee : null,
           answers: survey.questions.map((question) => {
             const answer = answerByQuestion.get(question.id);
+            const detail = answer
+              ? this.formatAnswerDetail(question, answer)
+              : {
+                  value: '—',
+                  valueInt: null,
+                  valueText: null,
+                  scaleMax: null,
+                  gridParts: [],
+                };
             return {
               questionId: question.id,
               text: question.text,
               type: question.type,
               metric: question.metric,
-              value: answer
-                ? this.formatAnswerValue(question, answer)
-                : '—',
+              ...detail,
             };
           }),
         };

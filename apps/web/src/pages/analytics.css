@@ -492,27 +492,149 @@
 .analytics-response-detail td {
   background: #f8fafc;
   border-top: none;
-  padding-top: 8px;
-  padding-bottom: 14px;
+  padding-top: 10px;
+  padding-bottom: 16px;
 }
 
-.analytics-answer-list {
-  margin: 0;
-  padding-left: 18px;
+.analytics-response-panel {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+}
+
+.analytics-response-survey {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.analytics-response-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.analytics-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.analytics-chip strong {
+  font-size: 14px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-answer-cards {
+  display: grid;
+  gap: 8px;
+}
+
+.analytics-answer-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+}
+
+.analytics-answer-card.text,
+.analytics-answer-card.grid {
+  display: block;
+}
+
+.analytics-answer-card-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.analytics-answer-metric {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 4px;
 }
 
 .analytics-answer-q {
   font-size: 13px;
   color: var(--text);
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
-.analytics-answer-a {
-  margin-top: 4px;
-  font-size: 14px;
+.analytics-answer-score {
+  flex-shrink: 0;
+  min-width: 52px;
+  text-align: right;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-answer-scale {
+  margin-left: 2px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--primary-dark);
+  color: var(--muted);
+}
+
+.analytics-answer-text {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
   white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.analytics-grid-table {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.analytics-grid-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-size: 13px;
+}
+
+.analytics-grid-row span {
+  color: var(--muted);
+}
+
+.analytics-grid-row strong {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .analytics-answer-card.scale {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .analytics-answer-score {
+    text-align: left;
+  }
 }
