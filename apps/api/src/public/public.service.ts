@@ -6,9 +6,11 @@ import {
 import { LinkType, QuestionType, SurveyStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  formatChoiceLabels,
   isChoiceOptions,
   OTHER_CHOICE_ID,
   parseChoiceAnswer,
+  parseMultiAnswer,
 } from '../surveys/choice.types';
 import {
   isGridColumns,
@@ -205,6 +207,28 @@ export class PublicService {
         }
         continue;
       }
+      if (question.type === QuestionType.MULTI) {
+        if (!isChoiceOptions(question.choices) || question.choices.length < 2) {
+          throw new BadRequestException('Варианты ответа настроены некорректно');
+        }
+        const picked = parseMultiAnswer(answer.valueJson);
+        if (!picked) {
+          throw new BadRequestException('Отметьте хотя бы один вариант');
+        }
+        const known = new Set(question.choices.map((choice) => choice.id));
+        for (const choiceId of picked.choiceIds) {
+          if (choiceId === OTHER_CHOICE_ID) {
+            if (!question.allowOther || !picked.otherText) {
+              throw new BadRequestException('Укажите свой вариант');
+            }
+            continue;
+          }
+          if (!known.has(choiceId)) {
+            throw new BadRequestException('Некорректный вариант ответа');
+          }
+        }
+        continue;
+      }
       if (question.type === QuestionType.GRID) {
         if (!isGridRows(question.gridRows) || !isGridColumns(question.gridColumns)) {
           throw new BadRequestException('Сетка настроена некорректно');
@@ -267,6 +291,21 @@ export class PublicService {
                 valueJson: picked
                   ? {
                       choiceId: picked.choiceId,
+                      ...(picked.otherText ? { otherText: picked.otherText } : {}),
+                    }
+                  : undefined,
+              };
+            }
+            if (question?.type === QuestionType.MULTI && isChoiceOptions(question.choices)) {
+              const picked = parseMultiAnswer(a.valueJson);
+              return {
+                questionId: a.questionId,
+                valueText: picked
+                  ? formatChoiceLabels(question.choices, picked.choiceIds, picked.otherText)
+                  : '',
+                valueJson: picked
+                  ? {
+                      choiceIds: picked.choiceIds.join(','),
                       ...(picked.otherText ? { otherText: picked.otherText } : {}),
                     }
                   : undefined,

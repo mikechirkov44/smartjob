@@ -5,7 +5,7 @@ export type TemplateQuestion = {
   metric: string;
   category?: string;
   text: string;
-  type?: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' | 'SINGLE';
+  type?: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' | 'SINGLE' | 'MULTI';
   scaleMax?: number;
   scaleMinLabel?: string;
   scaleMaxLabel?: string;
@@ -197,10 +197,11 @@ export const ENPS_QUESTION: TemplateQuestion = {
 
 export function mapQuestionType(
   type?: TemplateQuestion['type'] | string | null,
-): 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' | 'SINGLE' {
+): 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' | 'SINGLE' | 'MULTI' {
   if (type === 'ENPS') return 'ENPS';
   if (type === 'TEXT') return 'TEXT';
   if (type === 'GRID') return 'GRID';
   if (type === 'SINGLE') return 'SINGLE';
+  if (type === 'MULTI') return 'MULTI';
   return 'LIKERT';
 }

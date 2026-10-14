@@ -38,6 +38,7 @@ enum QuestionType {
   TEXT
   GRID
   SINGLE
+  MULTI
 }
 
 enum LinkType {

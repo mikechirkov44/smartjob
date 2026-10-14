@@ -10,6 +10,11 @@ export type ChoiceAnswer = {
   otherText?: string;
 };
 
+export type MultiAnswer = {
+  choiceIds: string[];
+  otherText?: string;
+};
+
 export function isChoiceOptions(value: unknown): value is ChoiceOption[] {
   return (
     Array.isArray(value) &&
@@ -33,4 +38,39 @@ export function parseChoiceAnswer(value: unknown): ChoiceAnswer | null {
     choiceId: raw.choiceId.trim(),
     otherText: otherText || undefined,
   };
+}
+
+export function parseMultiAnswer(value: unknown): MultiAnswer | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const raw = value as Record<string, unknown>;
+  const source = raw.choiceIds;
+  const parts = Array.isArray(source)
+    ? source
+    : typeof source === 'string'
+      ? source.split(',')
+      : [];
+  const choiceIds = [
+    ...new Set(
+      parts
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
+  if (!choiceIds.length) return null;
+  const otherText =
+    typeof raw.otherText === 'string' ? raw.otherText.trim() : undefined;
+  return { choiceIds, otherText: otherText || undefined };
+}
+
+export function formatChoiceLabels(
+  choices: ChoiceOption[],
+  choiceIds: string[],
+  otherText?: string,
+): string {
+  const labels = choices
+    .filter((choice) => choiceIds.includes(choice.id))
+    .map((choice) => choice.label);
+  if (choiceIds.includes(OTHER_CHOICE_ID) && otherText) labels.push(otherText);
+  return labels.join('; ');
 }

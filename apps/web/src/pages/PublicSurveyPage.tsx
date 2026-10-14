@@ -10,7 +10,7 @@ type Question = {
   text: string;
   metric?: string;
   category?: string;
-  type: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' | 'SINGLE';
+  type: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' | 'SINGLE' | 'MULTI';
   scaleMax?: number;
   scaleMinLabel?: string | null;
   scaleMaxLabel?: string | null;
@@ -51,6 +51,7 @@ export function PublicSurveyPage() {
   const [textDraft, setTextDraft] = useState('');
   const [gridDraft, setGridDraft] = useState<Record<string, string>>({});
   const [choiceId, setChoiceId] = useState('');
+  const [multiIds, setMultiIds] = useState<string[]>([]);
   const [otherText, setOtherText] = useState('');
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -80,6 +81,16 @@ export function PublicSurveyPage() {
     if (current.type === 'SINGLE') {
       const saved = answers[current.id]?.valueJson;
       setChoiceId(saved?.choiceId || '');
+      setOtherText(saved?.otherText || '');
+    }
+    if (current.type === 'MULTI') {
+      const saved = answers[current.id]?.valueJson;
+      setMultiIds(
+        (saved?.choiceIds || '')
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean),
+      );
       setOtherText(saved?.otherText || '');
     }
   }, [current?.id]);
@@ -140,6 +151,27 @@ export function PublicSurveyPage() {
         valueJson: {
           choiceId,
           ...(choiceId === OTHER_CHOICE_ID ? { otherText: otherText.trim() } : {}),
+        },
+      },
+    });
+  };
+
+  const toggleMulti = (id: string) => {
+    setMultiIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  const submitMulti = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!current || !multiIds.length) return;
+    if (multiIds.includes(OTHER_CHOICE_ID) && !otherText.trim()) return;
+    await advance({
+      ...answers,
+      [current.id]: {
+        valueJson: {
+          choiceIds: multiIds.join(','),
+          ...(multiIds.includes(OTHER_CHOICE_ID) ? { otherText: otherText.trim() } : {}),
         },
       },
     });
@@ -272,7 +304,9 @@ export function PublicSurveyPage() {
       ? 'Введите ответ своими словами'
       : current?.type === 'SINGLE'
         ? 'Выберите один вариант'
-        : current?.type === 'GRID'
+        : current?.type === 'MULTI'
+          ? 'Отметьте один или несколько вариантов'
+          : current?.type === 'GRID'
         ? current.requireAllRows === false
           ? 'Отметьте оценку в нужных строках'
           : 'Отметьте оценку в каждой строке'
@@ -379,6 +413,59 @@ export function PublicSurveyPage() {
                 busy ||
                 !choiceId ||
                 (choiceId === OTHER_CHOICE_ID && !otherText.trim())
+              }
+            >
+              {idx < questions.length - 1 ? 'Далее' : 'Отправить'}
+            </button>
+          </form>
+        ) : current?.type === 'MULTI' ? (
+          <form className="choice-answer" onSubmit={(e) => void submitMulti(e)}>
+            {(current.choices || []).map((choice) => (
+              <label
+                key={choice.id}
+                className={`choice-option ${multiIds.includes(choice.id) ? 'selected' : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={multiIds.includes(choice.id)}
+                  disabled={busy}
+                  onChange={() => toggleMulti(choice.id)}
+                />
+                <span>{choice.label}</span>
+              </label>
+            ))}
+            {current.allowOther && (
+              <label
+                className={`choice-option ${
+                  multiIds.includes(OTHER_CHOICE_ID) ? 'selected' : ''
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={multiIds.includes(OTHER_CHOICE_ID)}
+                  disabled={busy}
+                  onChange={() => toggleMulti(OTHER_CHOICE_ID)}
+                />
+                <span>Другое</span>
+              </label>
+            )}
+            {current.allowOther && multiIds.includes(OTHER_CHOICE_ID) && (
+              <input
+                className="choice-other-input"
+                value={otherText}
+                disabled={busy}
+                placeholder="Свой вариант"
+                onChange={(e) => setOtherText(e.target.value)}
+                required
+              />
+            )}
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={
+                busy ||
+                multiIds.length === 0 ||
+                (multiIds.includes(OTHER_CHOICE_ID) && !otherText.trim())
               }
             >
               {idx < questions.length - 1 ? 'Далее' : 'Отправить'}

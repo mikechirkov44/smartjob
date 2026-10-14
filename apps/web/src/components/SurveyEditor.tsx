@@ -148,10 +148,16 @@ export function SurveyEditor({
     if (!organizationId) return;
     const ready = questions.filter((q) => q.text.trim());
     const shortChoice = ready.find(
-      (q) => q.kind === 'SINGLE' && q.choices.filter((c) => c.label.trim()).length < 2,
+      (q) =>
+        (q.kind === 'SINGLE' || q.kind === 'MULTI') &&
+        q.choices.filter((c) => c.label.trim()).length < 2,
     );
     if (shortChoice) {
-      setError('В вопросе «один из списка» нужно минимум 2 варианта');
+      setError(
+        shortChoice.kind === 'MULTI'
+          ? 'В вопросе «несколько из списка» нужно минимум 2 варианта'
+          : 'В вопросе «один из списка» нужно минимум 2 варианта',
+      );
       return;
     }
     setError('');
@@ -376,7 +382,7 @@ export function SurveyEditor({
         <div className="survey-editor-section">
           <h3 className="survey-editor-section-title">Конструктор вопросов</h3>
           <p className="survey-editor-section-sub">
-            Текст, шкалы, один из списка и сетка. Перетащите карточку за ⋮⋮, чтобы изменить порядок.
+            Текст, шкалы, списки и сетка. Перетащите карточку за ⋮⋮, чтобы изменить порядок.
           </p>
           {questionsLocked && (
             <p className="muted">
@@ -447,7 +453,7 @@ export function SurveyEditor({
                                     : defaultGridColumns(),
                               }
                             : {}),
-                          ...(next === 'SINGLE'
+                          ...(next === 'SINGLE' || next === 'MULTI'
                             ? {
                                 choices: q.choices?.length ? q.choices : defaultChoices(),
                               }
@@ -521,12 +527,15 @@ export function SurveyEditor({
                     </div>
                   </>
                 )}
-                {q.kind === 'SINGLE' && (
+                {(q.kind === 'SINGLE' || q.kind === 'MULTI') && (
                   <div className="choice-builder">
                     <div className="grid-builder-title">Варианты</div>
                     {q.choices.map((choice, choiceIdx) => (
                       <div className="grid-builder-row" key={choice.id}>
-                        <span className="choice-radio" aria-hidden />
+                        <span
+                          className={q.kind === 'MULTI' ? 'choice-box' : 'choice-radio'}
+                          aria-hidden
+                        />
                         <input
                           disabled={questionsLocked}
                           placeholder="Вариант"

@@ -1,6 +1,6 @@
 import type { SelectOption } from './components/CustomSelect';
 
-export type QuestionKind = 'TEXT' | 'LIKERT_5' | 'LIKERT_10' | 'SINGLE' | 'GRID';
+export type QuestionKind = 'TEXT' | 'LIKERT_5' | 'LIKERT_10' | 'SINGLE' | 'MULTI' | 'GRID';
 
 export type GridRow = { id: string; label: string };
 export type GridColumn = { id: string; label: string; value?: number | null };
@@ -13,6 +13,7 @@ export const QUESTION_KIND_OPTIONS: SelectOption[] = [
   { value: 'LIKERT_5', label: 'Шкала 1–5' },
   { value: 'LIKERT_10', label: 'Шкала 1–10' },
   { value: 'SINGLE', label: 'Один из списка' },
+  { value: 'MULTI', label: 'Несколько из списка' },
   { value: 'GRID', label: 'Сетка (множественный выбор)' },
 ];
 
@@ -109,6 +110,7 @@ export function kindFromApi(type: string, scaleMax?: number): QuestionKind {
   if (type === 'TEXT') return 'TEXT';
   if (type === 'GRID') return 'GRID';
   if (type === 'SINGLE') return 'SINGLE';
+  if (type === 'MULTI') return 'MULTI';
   if (type === 'ENPS') return 'LIKERT_10';
   return scaleMax === 10 ? 'LIKERT_10' : 'LIKERT_5';
 }
@@ -122,12 +124,12 @@ export function toApiQuestion(q: EditorQuestion) {
       type: 'TEXT' as const,
     };
   }
-  if (q.kind === 'SINGLE') {
+  if (q.kind === 'SINGLE' || q.kind === 'MULTI') {
     return {
       text: q.text,
       metric: q.metric,
       category: q.category,
-      type: 'SINGLE' as const,
+      type: q.kind,
       allowOther: q.allowOther,
       choices: q.choices
         .map((choice) => ({ id: choice.id, label: choice.label.trim() }))

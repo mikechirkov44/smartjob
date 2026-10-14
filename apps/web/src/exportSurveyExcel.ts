@@ -184,6 +184,7 @@ export async function downloadSurveyExcel(payload: ExportPayload) {
         answer.type !== 'TEXT' &&
         answer.type !== 'GRID' &&
         answer.type !== 'SINGLE' &&
+        answer.type !== 'MULTI' &&
         answer.valueInt != null
       ) {
         paintScore(detail.getCell(7), answer.valueInt, scaleMax);

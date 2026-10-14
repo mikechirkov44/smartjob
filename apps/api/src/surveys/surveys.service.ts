@@ -49,12 +49,15 @@ export class SurveysService {
     if (mapped === 'TEXT') return QuestionType.TEXT;
     if (mapped === 'GRID') return QuestionType.GRID;
     if (mapped === 'SINGLE') return QuestionType.SINGLE;
+    if (mapped === 'MULTI') return QuestionType.MULTI;
     return QuestionType.LIKERT;
   }
 
   private toScaleMax(q: TemplateQuestion): number {
     if (q.type === 'ENPS') return 10;
-    if (q.type === 'TEXT' || q.type === 'GRID' || q.type === 'SINGLE') return 5;
+    if (q.type === 'TEXT' || q.type === 'GRID' || q.type === 'SINGLE' || q.type === 'MULTI') {
+      return 5;
+    }
     return q.scaleMax === 10 ? 10 : 5;
   }
 
@@ -66,7 +69,9 @@ export class SurveysService {
       .filter((choice) => choice.id && choice.label);
     if (choices.length < 2) {
       throw new BadRequestException(
-        'В вопросе «один из списка» нужно минимум 2 варианта',
+        q.type === 'MULTI'
+          ? 'В вопросе «несколько из списка» нужно минимум 2 варианта'
+          : 'В вопросе «один из списка» нужно минимум 2 варианта',
       );
     }
     if (choices.length > 30) {
@@ -130,7 +135,7 @@ export class SurveysService {
             ...grid,
           };
         }
-        if (type === 'SINGLE') {
+        if (type === 'SINGLE' || type === 'MULTI') {
           const choice = this.normalizeChoices(q);
           return {
             text: q.text,
