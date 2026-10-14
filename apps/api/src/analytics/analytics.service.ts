@@ -163,7 +163,7 @@ export class AnalyticsService {
     for (const q of questions) {
       const cat = (q.category || '').toLowerCase();
       if (SKIP_DRIVER_CATEGORIES.has(cat)) continue;
-      if (q.type === 'ENPS' || q.type === 'TEXT') continue;
+      if (q.type === 'ENPS' || q.type === 'TEXT' || q.type === 'SINGLE') continue;
 
       if (q.type === 'GRID' && isGridRows(q.gridRows)) {
         for (const row of q.gridRows) {
@@ -300,7 +300,9 @@ export class AnalyticsService {
 
         for (const answer of response.answers) {
           const q = qMap.get(answer.questionId);
-          if (!q || q.type === 'ENPS' || q.type === 'TEXT') continue;
+          if (!q || q.type === 'ENPS' || q.type === 'TEXT' || q.type === 'SINGLE') {
+            continue;
+          }
 
           if (q.type === 'GRID') {
             if (!isGridRows(q.gridRows) || !isGridColumns(q.gridColumns)) continue;
@@ -718,7 +720,7 @@ export class AnalyticsService {
       valueJson?: Prisma.JsonValue | null;
     },
   ) {
-    if (question.type === 'TEXT') {
+    if (question.type === 'TEXT' || question.type === 'SINGLE') {
       const text = answer.valueText?.trim() || '';
       return {
         value: text || '—',

@@ -180,7 +180,12 @@ export async function downloadSurveyExcel(payload: ExportPayload) {
       detail.getCell(5).alignment = { wrapText: true, vertical: 'middle' };
       detail.getCell(6).alignment = { wrapText: true, vertical: 'middle' };
       detail.getCell(3).alignment = { horizontal: 'center' };
-      if (answer.type !== 'TEXT' && answer.type !== 'GRID' && answer.valueInt != null) {
+      if (
+        answer.type !== 'TEXT' &&
+        answer.type !== 'GRID' &&
+        answer.type !== 'SINGLE' &&
+        answer.valueInt != null
+      ) {
         paintScore(detail.getCell(7), answer.valueInt, scaleMax);
       } else {
         detail.getCell(7).value = '—';

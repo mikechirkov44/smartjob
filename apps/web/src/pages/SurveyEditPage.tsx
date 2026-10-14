@@ -4,6 +4,7 @@ import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
 import { SurveyEditor, SurveyFormState } from '../components/SurveyEditor';
 import {
+  defaultChoices,
   defaultGridColumns,
   defaultGridRows,
   EditorQuestion,
@@ -38,6 +39,8 @@ type SurveyPayload = {
     gridRows?: GridRow[] | null;
     gridColumns?: GridColumn[] | null;
     requireAllRows?: boolean;
+    choices?: { id: string; label: string }[] | null;
+    allowOther?: boolean;
   }>;
 };
 
@@ -100,6 +103,9 @@ export function SurveyEditPage() {
                       ? q.gridColumns
                       : defaultGridColumns(),
                   requireAllRows: q.requireAllRows ?? true,
+                  choices:
+                    q.choices && q.choices.length ? q.choices : defaultChoices(),
+                  allowOther: q.allowOther ?? false,
                 };
               })
             : [emptyQuestion()],

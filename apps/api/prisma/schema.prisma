@@ -37,6 +37,7 @@ enum QuestionType {
   ENPS
   TEXT
   GRID
+  SINGLE
 }
 
 enum LinkType {
@@ -147,6 +148,8 @@ model SurveyQuestion {
   gridRows       Json?
   gridColumns    Json?
   requireAllRows Boolean      @default(true)
+  choices        Json?
+  allowOther     Boolean      @default(false)
   metric         String?
   category       String?
   text           String

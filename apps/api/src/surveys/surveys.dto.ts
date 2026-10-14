@@ -16,6 +16,17 @@ import {
 import { Type } from 'class-transformer';
 import { QuestionType, SurveyStatus, SurveyTemplate } from '@prisma/client';
 
+export class ChoiceOptionDto {
+  @IsString()
+  @MinLength(1)
+  id!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
+  label!: string;
+}
+
 export class GridRowDto {
   @IsString()
   @MinLength(1)
@@ -94,6 +105,16 @@ export class CustomQuestionDto {
   @IsOptional()
   @IsBoolean()
   requireAllRows?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ChoiceOptionDto)
+  choices?: ChoiceOptionDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  allowOther?: boolean;
 
   @IsOptional()
   @Type(() => Number)

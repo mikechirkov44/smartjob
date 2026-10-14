@@ -648,7 +648,7 @@ export function AnalyticsPage() {
                               </div>
                               <div className="analytics-answer-cards">
                                 {(r.answers || []).map((a) => {
-                                  const isText = a.type === 'TEXT';
+                                  const isText = a.type === 'TEXT' || a.type === 'SINGLE';
                                   const isGrid = a.type === 'GRID';
                                   const scaleMax =
                                     a.scaleMax ?? (a.type === 'ENPS' ? 10 : 5);

@@ -1,14 +1,18 @@
 import type { SelectOption } from './components/CustomSelect';
 
-export type QuestionKind = 'TEXT' | 'LIKERT_5' | 'LIKERT_10' | 'GRID';
+export type QuestionKind = 'TEXT' | 'LIKERT_5' | 'LIKERT_10' | 'SINGLE' | 'GRID';
 
 export type GridRow = { id: string; label: string };
 export type GridColumn = { id: string; label: string; value?: number | null };
+export type ChoiceOption = { id: string; label: string };
+
+export const OTHER_CHOICE_ID = '__other__';
 
 export const QUESTION_KIND_OPTIONS: SelectOption[] = [
   { value: 'TEXT', label: 'Текст' },
   { value: 'LIKERT_5', label: 'Шкала 1–5' },
   { value: 'LIKERT_10', label: 'Шкала 1–10' },
+  { value: 'SINGLE', label: 'Один из списка' },
   { value: 'GRID', label: 'Сетка (множественный выбор)' },
 ];
 
@@ -54,6 +58,8 @@ export type EditorQuestion = {
   gridRows: GridRow[];
   gridColumns: GridColumn[];
   requireAllRows: boolean;
+  choices: ChoiceOption[];
+  allowOther: boolean;
 };
 
 function uid(prefix: string) {
@@ -66,6 +72,13 @@ export function defaultGridColumns(): GridColumn[] {
     label: String(n),
     value: n,
   }));
+}
+
+export function defaultChoices(): ChoiceOption[] {
+  return [
+    { id: uid('o'), label: '' },
+    { id: uid('o'), label: '' },
+  ];
 }
 
 export function defaultGridRows(): GridRow[] {
@@ -87,12 +100,15 @@ export function emptyQuestion(): EditorQuestion {
     gridRows: defaultGridRows(),
     gridColumns: defaultGridColumns(),
     requireAllRows: true,
+    choices: defaultChoices(),
+    allowOther: false,
   };
 }
 
 export function kindFromApi(type: string, scaleMax?: number): QuestionKind {
   if (type === 'TEXT') return 'TEXT';
   if (type === 'GRID') return 'GRID';
+  if (type === 'SINGLE') return 'SINGLE';
   if (type === 'ENPS') return 'LIKERT_10';
   return scaleMax === 10 ? 'LIKERT_10' : 'LIKERT_5';
 }
@@ -104,6 +120,18 @@ export function toApiQuestion(q: EditorQuestion) {
       metric: q.metric,
       category: q.category,
       type: 'TEXT' as const,
+    };
+  }
+  if (q.kind === 'SINGLE') {
+    return {
+      text: q.text,
+      metric: q.metric,
+      category: q.category,
+      type: 'SINGLE' as const,
+      allowOther: q.allowOther,
+      choices: q.choices
+        .map((choice) => ({ id: choice.id, label: choice.label.trim() }))
+        .filter((choice) => choice.label),
     };
   }
   if (q.kind === 'GRID') {

@@ -18,6 +18,7 @@ import {
   CreateSurveyDto,
   UpdateSurveyDto,
 } from './surveys.dto';
+import { ChoiceOption } from './choice.types';
 import {
   ENPS_QUESTION,
   FULL_TEMPLATE,
@@ -47,13 +48,35 @@ export class SurveysService {
     if (mapped === 'ENPS') return QuestionType.ENPS;
     if (mapped === 'TEXT') return QuestionType.TEXT;
     if (mapped === 'GRID') return QuestionType.GRID;
+    if (mapped === 'SINGLE') return QuestionType.SINGLE;
     return QuestionType.LIKERT;
   }
 
   private toScaleMax(q: TemplateQuestion): number {
     if (q.type === 'ENPS') return 10;
-    if (q.type === 'TEXT' || q.type === 'GRID') return 5;
+    if (q.type === 'TEXT' || q.type === 'GRID' || q.type === 'SINGLE') return 5;
     return q.scaleMax === 10 ? 10 : 5;
+  }
+
+  private normalizeChoices(
+    q: NonNullable<CreateSurveyDto['questions']>[number],
+  ): { choices: ChoiceOption[]; allowOther: boolean } {
+    const choices = (q.choices || [])
+      .map((choice) => ({ id: choice.id.trim(), label: choice.label.trim() }))
+      .filter((choice) => choice.id && choice.label);
+    if (choices.length < 2) {
+      throw new BadRequestException(
+        'В вопросе «один из списка» нужно минимум 2 варианта',
+      );
+    }
+    if (choices.length > 30) {
+      throw new BadRequestException('В вопросе не больше 30 вариантов');
+    }
+    const ids = new Set(choices.map((choice) => choice.id));
+    if (ids.size !== choices.length) {
+      throw new BadRequestException('Варианты ответа должны быть уникальными');
+    }
+    return { choices, allowOther: q.allowOther ?? false };
   }
 
   private normalizeGridQuestion(
@@ -105,6 +128,17 @@ export class SurveysService {
             type,
             scaleMax: 5,
             ...grid,
+          };
+        }
+        if (type === 'SINGLE') {
+          const choice = this.normalizeChoices(q);
+          return {
+            text: q.text,
+            metric: q.metric || 'Общее',
+            category: q.category || 'custom',
+            type,
+            scaleMax: 5,
+            ...choice,
           };
         }
         const scaleMax =
@@ -210,6 +244,8 @@ export class SurveysService {
               gridRows: q.gridRows ?? undefined,
               gridColumns: q.gridColumns ?? undefined,
               requireAllRows: q.requireAllRows ?? true,
+              choices: q.choices ?? undefined,
+              allowOther: q.allowOther ?? false,
             })),
           },
         },
@@ -290,6 +326,8 @@ export class SurveysService {
             gridRows: q.gridRows ?? undefined,
             gridColumns: q.gridColumns ?? undefined,
             requireAllRows: q.requireAllRows ?? true,
+            choices: q.choices ?? undefined,
+            allowOther: q.allowOther ?? false,
           })),
         });
       }

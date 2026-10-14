@@ -1,16 +1,19 @@
+import type { ChoiceOption } from './choice.types';
 import type { GridColumn, GridRow } from './grid.types';
 
 export type TemplateQuestion = {
   metric: string;
   category?: string;
   text: string;
-  type?: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID';
+  type?: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' | 'SINGLE';
   scaleMax?: number;
   scaleMinLabel?: string;
   scaleMaxLabel?: string;
   gridRows?: GridRow[];
   gridColumns?: GridColumn[];
   requireAllRows?: boolean;
+  choices?: ChoiceOption[];
+  allowOther?: boolean;
 };
 
 export const FULL_TEMPLATE: TemplateQuestion[] = [
@@ -194,9 +197,10 @@ export const ENPS_QUESTION: TemplateQuestion = {
 
 export function mapQuestionType(
   type?: TemplateQuestion['type'] | string | null,
-): 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' {
+): 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' | 'SINGLE' {
   if (type === 'ENPS') return 'ENPS';
   if (type === 'TEXT') return 'TEXT';
   if (type === 'GRID') return 'GRID';
+  if (type === 'SINGLE') return 'SINGLE';
   return 'LIKERT';
 }

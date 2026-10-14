@@ -4,6 +4,7 @@ import { useAuth } from '../auth';
 import { COVER_PRESETS, coverSrc, isUploadedCover } from '../coverPresets';
 import {
   CATEGORY_OPTIONS,
+  defaultChoices,
   defaultGridColumns,
   defaultGridRows,
   EditorQuestion,
@@ -145,6 +146,14 @@ export function SurveyEditor({
 
   const saveSurvey = async () => {
     if (!organizationId) return;
+    const ready = questions.filter((q) => q.text.trim());
+    const shortChoice = ready.find(
+      (q) => q.kind === 'SINGLE' && q.choices.filter((c) => c.label.trim()).length < 2,
+    );
+    if (shortChoice) {
+      setError('В вопросе «один из списка» нужно минимум 2 варианта');
+      return;
+    }
     setError('');
     setSaving(true);
     try {
@@ -367,7 +376,7 @@ export function SurveyEditor({
         <div className="survey-editor-section">
           <h3 className="survey-editor-section-title">Конструктор вопросов</h3>
           <p className="survey-editor-section-sub">
-            Текст, шкалы и сетка. Перетащите карточку за ⋮⋮, чтобы изменить порядок.
+            Текст, шкалы, один из списка и сетка. Перетащите карточку за ⋮⋮, чтобы изменить порядок.
           </p>
           {questionsLocked && (
             <p className="muted">
@@ -438,6 +447,11 @@ export function SurveyEditor({
                                     : defaultGridColumns(),
                               }
                             : {}),
+                          ...(next === 'SINGLE'
+                            ? {
+                                choices: q.choices?.length ? q.choices : defaultChoices(),
+                              }
+                            : {}),
                         });
                       }}
                       options={QUESTION_KIND_OPTIONS}
@@ -506,6 +520,61 @@ export function SurveyEditor({
                       </div>
                     </div>
                   </>
+                )}
+                {q.kind === 'SINGLE' && (
+                  <div className="choice-builder">
+                    <div className="grid-builder-title">Варианты</div>
+                    {q.choices.map((choice, choiceIdx) => (
+                      <div className="grid-builder-row" key={choice.id}>
+                        <span className="choice-radio" aria-hidden />
+                        <input
+                          disabled={questionsLocked}
+                          placeholder="Вариант"
+                          value={choice.label}
+                          onChange={(e) => {
+                            const choices = q.choices.map((item, i) =>
+                              i === choiceIdx ? { ...item, label: e.target.value } : item,
+                            );
+                            updateQuestion(idx, { choices });
+                          }}
+                        />
+                        {!questionsLocked && q.choices.length > 2 && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() =>
+                              updateQuestion(idx, {
+                                choices: q.choices.filter((_, i) => i !== choiceIdx),
+                              })
+                            }
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    {!questionsLocked && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() =>
+                          updateQuestion(idx, {
+                            choices: [...q.choices, { id: newGridId('o'), label: '' }],
+                          })
+                        }
+                      >
+                        + Вариант
+                      </button>
+                    )}
+                    <CustomCheckbox
+                      id={`other-${q.clientKey}`}
+                      checked={q.allowOther}
+                      onChange={(allowOther) => updateQuestion(idx, { allowOther })}
+                      label='Добавить вариант «Другое»'
+                      description="Сотрудник сможет вписать свой ответ"
+                      disabled={questionsLocked}
+                    />
+                  </div>
                 )}
                 {q.kind === 'GRID' && (
                   <div className="grid-builder">

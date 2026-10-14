@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { coverSrc } from '../coverPresets';
-import type { GridColumn, GridRow } from '../questionOptions';
+import { OTHER_CHOICE_ID, type ChoiceOption, type GridColumn, type GridRow } from '../questionOptions';
 import './public-survey.css';
 
 type Question = {
@@ -10,13 +10,15 @@ type Question = {
   text: string;
   metric?: string;
   category?: string;
-  type: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID';
+  type: 'LIKERT' | 'ENPS' | 'TEXT' | 'GRID' | 'SINGLE';
   scaleMax?: number;
   scaleMinLabel?: string | null;
   scaleMaxLabel?: string | null;
   gridRows?: GridRow[] | null;
   gridColumns?: GridColumn[] | null;
   requireAllRows?: boolean;
+  choices?: ChoiceOption[] | null;
+  allowOther?: boolean;
 };
 
 type AnswerValue = {
@@ -48,6 +50,8 @@ export function PublicSurveyPage() {
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [textDraft, setTextDraft] = useState('');
   const [gridDraft, setGridDraft] = useState<Record<string, string>>({});
+  const [choiceId, setChoiceId] = useState('');
+  const [otherText, setOtherText] = useState('');
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -72,6 +76,11 @@ export function PublicSurveyPage() {
     }
     if (current.type === 'GRID') {
       setGridDraft(answers[current.id]?.valueJson || {});
+    }
+    if (current.type === 'SINGLE') {
+      const saved = answers[current.id]?.valueJson;
+      setChoiceId(saved?.choiceId || '');
+      setOtherText(saved?.otherText || '');
     }
   }, [current?.id]);
 
@@ -118,6 +127,21 @@ export function PublicSurveyPage() {
     await advance({
       ...answers,
       [current.id]: { valueText: textDraft.trim() },
+    });
+  };
+
+  const submitChoice = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!current || !choiceId) return;
+    if (choiceId === OTHER_CHOICE_ID && !otherText.trim()) return;
+    await advance({
+      ...answers,
+      [current.id]: {
+        valueJson: {
+          choiceId,
+          ...(choiceId === OTHER_CHOICE_ID ? { otherText: otherText.trim() } : {}),
+        },
+      },
     });
   };
 
@@ -246,7 +270,9 @@ export function PublicSurveyPage() {
   const hint =
     current?.type === 'TEXT'
       ? 'Введите ответ своими словами'
-      : current?.type === 'GRID'
+      : current?.type === 'SINGLE'
+        ? 'Выберите один вариант'
+        : current?.type === 'GRID'
         ? current.requireAllRows === false
           ? 'Отметьте оценку в нужных строках'
           : 'Отметьте оценку в каждой строке'
@@ -301,6 +327,59 @@ export function PublicSurveyPage() {
               className="btn btn-primary"
               type="submit"
               disabled={busy || !textDraft.trim()}
+            >
+              {idx < questions.length - 1 ? 'Далее' : 'Отправить'}
+            </button>
+          </form>
+        ) : current?.type === 'SINGLE' ? (
+          <form className="choice-answer" onSubmit={(e) => void submitChoice(e)}>
+            {(current.choices || []).map((choice) => (
+              <label
+                key={choice.id}
+                className={`choice-option ${choiceId === choice.id ? 'selected' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name={`choice-${current.id}`}
+                  checked={choiceId === choice.id}
+                  disabled={busy}
+                  onChange={() => setChoiceId(choice.id)}
+                />
+                <span>{choice.label}</span>
+              </label>
+            ))}
+            {current.allowOther && (
+              <label
+                className={`choice-option ${choiceId === OTHER_CHOICE_ID ? 'selected' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name={`choice-${current.id}`}
+                  checked={choiceId === OTHER_CHOICE_ID}
+                  disabled={busy}
+                  onChange={() => setChoiceId(OTHER_CHOICE_ID)}
+                />
+                <span>Другое</span>
+              </label>
+            )}
+            {current.allowOther && choiceId === OTHER_CHOICE_ID && (
+              <input
+                className="choice-other-input"
+                value={otherText}
+                disabled={busy}
+                placeholder="Свой вариант"
+                onChange={(e) => setOtherText(e.target.value)}
+                required
+              />
+            )}
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={
+                busy ||
+                !choiceId ||
+                (choiceId === OTHER_CHOICE_ID && !otherText.trim())
+              }
             >
               {idx < questions.length - 1 ? 'Далее' : 'Отправить'}
             </button>

@@ -6,6 +6,11 @@ import {
 import { LinkType, QuestionType, SurveyStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  isChoiceOptions,
+  OTHER_CHOICE_ID,
+  parseChoiceAnswer,
+} from '../surveys/choice.types';
+import {
   isGridColumns,
   isGridRows,
   parseGridAnswer,
@@ -108,6 +113,8 @@ export class PublicService {
               gridRows: q.gridRows,
               gridColumns: q.gridColumns,
               requireAllRows: q.requireAllRows,
+              choices: q.choices,
+              allowOther: q.allowOther,
               sortOrder: q.sortOrder,
             })),
       },
@@ -179,6 +186,25 @@ export class PublicService {
           throw new BadRequestException('eNPS должен быть от 0 до 10');
         }
       }
+      if (question.type === QuestionType.SINGLE) {
+        if (!isChoiceOptions(question.choices) || question.choices.length < 2) {
+          throw new BadRequestException('Варианты ответа настроены некорректно');
+        }
+        const picked = parseChoiceAnswer(answer.valueJson);
+        if (!picked) {
+          throw new BadRequestException('Выберите один вариант');
+        }
+        if (picked.choiceId === OTHER_CHOICE_ID) {
+          if (!question.allowOther || !picked.otherText) {
+            throw new BadRequestException('Укажите свой вариант');
+          }
+          continue;
+        }
+        if (!question.choices.some((choice) => choice.id === picked.choiceId)) {
+          throw new BadRequestException('Некорректный вариант ответа');
+        }
+        continue;
+      }
       if (question.type === QuestionType.GRID) {
         if (!isGridRows(question.gridRows) || !isGridColumns(question.gridColumns)) {
           throw new BadRequestException('Сетка настроена некорректно');
@@ -226,12 +252,33 @@ export class PublicService {
         grade: link.employee?.grade,
         enps: enps ?? undefined,
         answers: {
-          create: dto.answers.map((a) => ({
-            questionId: a.questionId,
-            valueInt: a.valueInt,
-            valueText: a.valueText,
-            valueJson: a.valueJson ?? undefined,
-          })),
+          create: dto.answers.map((a) => {
+            const question = questionMap.get(a.questionId);
+            if (question?.type === QuestionType.SINGLE && isChoiceOptions(question.choices)) {
+              const picked = parseChoiceAnswer(a.valueJson);
+              const label =
+                picked?.choiceId === OTHER_CHOICE_ID
+                  ? picked.otherText || ''
+                  : question.choices.find((choice) => choice.id === picked?.choiceId)
+                      ?.label || '';
+              return {
+                questionId: a.questionId,
+                valueText: label,
+                valueJson: picked
+                  ? {
+                      choiceId: picked.choiceId,
+                      ...(picked.otherText ? { otherText: picked.otherText } : {}),
+                    }
+                  : undefined,
+              };
+            }
+            return {
+              questionId: a.questionId,
+              valueInt: a.valueInt,
+              valueText: a.valueText,
+              valueJson: a.valueJson ?? undefined,
+            };
+          }),
         },
       },
       include: { answers: true },
