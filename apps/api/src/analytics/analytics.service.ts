@@ -77,7 +77,12 @@ export class AnalyticsService {
   async overview(organizationId: string, surveyId?: string) {
     const surveyList = await this.prisma.survey.findMany({
       where: { organizationId },
-      select: { id: true, title: true, status: true },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        _count: { select: { responses: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -115,6 +120,7 @@ export class AnalyticsService {
         id: s.id,
         title: s.title,
         status: s.status,
+        responses: s._count.responses,
       })),
       engMetrics: driverMetrics,
       benchmarks: BENCHMARK,

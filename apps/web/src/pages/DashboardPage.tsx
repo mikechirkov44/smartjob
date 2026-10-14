@@ -126,7 +126,7 @@ export function DashboardPage() {
                         {statusLabel(s.status)}
                       </span>
                     </td>
-                    <td>{s.responses}</td>
+                    <td>{s.responses ?? 0}</td>
                   </tr>
                 ))}
               </tbody>
