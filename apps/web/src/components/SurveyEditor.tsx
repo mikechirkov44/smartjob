@@ -28,6 +28,7 @@ export type SurveyFormState = {
   template: string;
   includeEnps: boolean;
   hideQuestionCategory: boolean;
+  showAnonymousNotice: boolean;
   adminCanIdentifyRespondents: boolean;
   closesAt: string;
 };
@@ -169,6 +170,7 @@ export function SurveyEditor({
         coverImage: form.coverImage,
         includeEnps: form.includeEnps,
         hideQuestionCategory: form.hideQuestionCategory,
+        showAnonymousNotice: form.showAnonymousNotice,
         adminCanIdentifyRespondents: form.adminCanIdentifyRespondents,
         closesAt: form.closesAt ? form.closesAt : mode === 'edit' ? null : undefined,
       };
@@ -366,6 +368,15 @@ export function SurveyEditor({
           }
           label="Скрывать категорию у респондента"
           description="Над вопросом не будет метки категории/метрики — только текст вопроса."
+        />
+        <CustomCheckbox
+          variant="toggle"
+          checked={form.showAnonymousNotice}
+          onChange={(showAnonymousNotice) =>
+            setForm((f) => ({ ...f, showAnonymousNotice }))
+          }
+          label="Показывать фразу об анонимности"
+          description="На стартовом экране и после отправки: «Опрос анонимный для участников…»."
         />
         <CustomCheckbox
           variant="toggle"

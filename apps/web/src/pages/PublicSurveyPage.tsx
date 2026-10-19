@@ -37,6 +37,7 @@ type Payload = {
     description?: string;
     coverImage?: string;
     hideQuestionCategory?: boolean;
+    showAnonymousNotice?: boolean;
     questions: Question[];
   };
 };
@@ -221,7 +222,11 @@ export function PublicSurveyPage() {
           <img src="/illustrations/celebrate.svg" alt="" className="cover-img" />
           <div className="thankyou-body">
             <h1>Спасибо!</h1>
-            <p>Ваши ответы сохранены. Опрос анонимный для коллег.</p>
+            <p>
+              Ваши ответы сохранены.
+              {data.survey.showAnonymousNotice !== false &&
+                ' Опрос анонимный для коллег.'}
+            </p>
           </div>
         </div>
       </div>
@@ -260,7 +265,9 @@ export function PublicSurveyPage() {
             {data.survey.description && (
               <p className="intro-desc">{data.survey.description}</p>
             )}
-            <p className="anon">{data.anonymousNotice}</p>
+            {data.survey.showAnonymousNotice !== false && (
+              <p className="anon">{data.anonymousNotice}</p>
+            )}
             <p className="muted">Вопросов: {questions.length}</p>
             <button className="btn btn-primary start-btn" onClick={() => setStarted(true)}>
               Начать опрос

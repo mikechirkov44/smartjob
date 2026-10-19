@@ -101,6 +101,7 @@ export class PublicService {
         template: survey.template,
         includeEnps: survey.includeEnps,
         hideQuestionCategory: survey.hideQuestionCategory,
+        showAnonymousNotice: survey.showAnonymousNotice,
         questions: alreadyCompleted
           ? []
           : survey.questions.map((q) => ({

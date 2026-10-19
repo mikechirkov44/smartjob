@@ -233,6 +233,7 @@ export class SurveysService {
           template: dto.template,
           includeEnps,
           hideQuestionCategory: dto.hideQuestionCategory ?? false,
+          showAnonymousNotice: dto.showAnonymousNotice ?? true,
           adminCanIdentifyRespondents: dto.adminCanIdentifyRespondents ?? false,
           closesAt: dto.closesAt ? new Date(dto.closesAt) : null,
           status: SurveyStatus.DRAFT,
@@ -295,6 +296,7 @@ export class SurveysService {
           status: dto.status,
           includeEnps: dto.includeEnps,
           hideQuestionCategory: dto.hideQuestionCategory,
+          showAnonymousNotice: dto.showAnonymousNotice,
           adminCanIdentifyRespondents: dto.adminCanIdentifyRespondents,
           closesAt:
             dto.closesAt === null

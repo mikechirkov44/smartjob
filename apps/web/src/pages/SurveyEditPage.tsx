@@ -24,6 +24,7 @@ type SurveyPayload = {
   status: string;
   includeEnps: boolean;
   hideQuestionCategory?: boolean;
+  showAnonymousNotice?: boolean;
   adminCanIdentifyRespondents: boolean;
   closesAt?: string | null;
   _count?: { responses: number };
@@ -78,6 +79,7 @@ export function SurveyEditPage() {
           template: s.template,
           includeEnps: s.includeEnps,
           hideQuestionCategory: s.hideQuestionCategory ?? false,
+          showAnonymousNotice: s.showAnonymousNotice !== false,
           adminCanIdentifyRespondents: s.adminCanIdentifyRespondents,
           closesAt: toLocalDatetime(s.closesAt),
         });

@@ -125,6 +125,7 @@ model Survey {
   status                      SurveyStatus   @default(DRAFT)
   includeEnps                 Boolean        @default(true)
   hideQuestionCategory        Boolean        @default(false)
+  showAnonymousNotice         Boolean        @default(true)
   adminCanIdentifyRespondents Boolean        @default(false)
   closesAt                    DateTime?
   createdAt                   DateTime       @default(now())

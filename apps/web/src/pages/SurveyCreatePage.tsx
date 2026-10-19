@@ -20,6 +20,7 @@ export function SurveyCreatePage() {
           template: 'FULL',
           includeEnps: true,
           hideQuestionCategory: false,
+          showAnonymousNotice: true,
           adminCanIdentifyRespondents: false,
           closesAt: '',
         }}

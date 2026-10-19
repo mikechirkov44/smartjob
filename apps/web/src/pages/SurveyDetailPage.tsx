@@ -18,6 +18,7 @@ type Survey = {
   status: string;
   includeEnps: boolean;
   adminCanIdentifyRespondents: boolean;
+  showAnonymousNotice?: boolean;
   closesAt?: string;
   questions: Array<{ id: string; text: string; metric?: string; type: string }>;
   links: Array<{
@@ -119,6 +120,17 @@ export function SurveyDetailPage() {
       return;
     }
     void setStatus('DRAFT');
+  };
+
+  const toggleAnonymousNotice = async (value: boolean) => {
+    if (!survey) return;
+    await api(`/organizations/${organizationId}/surveys/${id}`, {
+      token,
+      organizationId,
+      method: 'PATCH',
+      body: { showAnonymousNotice: value },
+    });
+    await load();
   };
 
   const toggleIdentify = async (value: boolean) => {
@@ -358,6 +370,13 @@ export function SurveyDetailPage() {
 
         <div className="card stack">
           <h3>Настройки анонимности</h3>
+          <CustomCheckbox
+            variant="toggle"
+            checked={survey.showAnonymousNotice !== false}
+            onChange={(value) => void toggleAnonymousNotice(value)}
+            label="Показывать фразу об анонимности"
+            description="На стартовом экране: «Опрос анонимный для участников. Ваши ответы не будут показаны коллегам.» После отправки короткая фраза тоже скрывается."
+          />
           <CustomCheckbox
             variant="toggle"
             checked={survey.adminCanIdentifyRespondents}

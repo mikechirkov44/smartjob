@@ -149,6 +149,10 @@ export class CreateSurveyDto {
 
   @IsOptional()
   @IsBoolean()
+  showAnonymousNotice?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   adminCanIdentifyRespondents?: boolean;
 
   @IsOptional()
@@ -187,6 +191,10 @@ export class UpdateSurveyDto {
   @IsOptional()
   @IsBoolean()
   hideQuestionCategory?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showAnonymousNotice?: boolean;
 
   @IsOptional()
   @IsBoolean()
