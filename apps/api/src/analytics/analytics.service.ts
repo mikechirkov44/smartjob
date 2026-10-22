@@ -149,7 +149,7 @@ export class AnalyticsService {
     const rows = this.buildRows(surveys);
     return {
       title: surveys[0].title,
-      responses: this.buildRecentResponses(surveys, rows, 100000),
+      responses: this.buildRecentResponses(surveys, rows),
     };
   }
 
@@ -847,7 +847,6 @@ export class AnalyticsService {
       }>;
     }>,
     rows: AnalyticRow[],
-    limit = 30,
   ) {
     const indexesById = new Map(rows.map((r) => [r.id, r]));
     const flat = surveys.flatMap((survey) =>
@@ -859,7 +858,6 @@ export class AnalyticsService {
         (a, b) =>
           b.response.completedAt.getTime() - a.response.completedAt.getTime(),
       )
-      .slice(0, limit)
       .map(({ survey, response }) => {
         const canIdentify =
           survey.adminCanIdentifyRespondents &&

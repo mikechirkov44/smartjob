@@ -148,6 +148,27 @@ function formatIndex(value: number | null | undefined) {
   return value.toFixed(2);
 }
 
+const RESPONSE_PAGE_SIZE = 20;
+
+function responsePageItems(
+  current: number,
+  count: number,
+): Array<number | 'gap'> {
+  if (count <= 7) {
+    return Array.from({ length: count }, (_, index) => index + 1);
+  }
+  const visible = [1, count, current - 1, current, current + 1]
+    .filter((page, index, pages) => page >= 1 && page <= count && pages.indexOf(page) === index)
+    .sort((left, right) => left - right);
+  const items: Array<number | 'gap'> = [];
+  for (const page of visible) {
+    const previous = items[items.length - 1];
+    if (typeof previous === 'number' && page - previous > 1) items.push('gap');
+    items.push(page);
+  }
+  return items;
+}
+
 export function AnalyticsPage() {
   const { token, organizationId } = useAuth();
   const [surveyId, setSurveyId] = useState('');
@@ -158,6 +179,7 @@ export function AnalyticsPage() {
   const [expandedResponseId, setExpandedResponseId] = useState<string | null>(
     null,
   );
+  const [responsePage, setResponsePage] = useState(1);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -171,6 +193,11 @@ export function AnalyticsPage() {
       setExpandedResponseId(null);
     });
   }, [token, organizationId, surveyId]);
+
+  useEffect(() => {
+    setResponsePage(1);
+    setExpandedResponseId(null);
+  }, [surveyId]);
 
   const filteredSegments = useMemo(() => {
     if (!data) return [];
@@ -245,6 +272,22 @@ export function AnalyticsPage() {
     (row || []).some((v) => Math.abs(v) > 0),
   );
   const showCorrMatrix = metricCount > 0 && metricCount <= 12 && (hasCorrSignal || data.N >= 5);
+  const responseTotal = data.responses.length;
+  const responsePageCount = Math.max(
+    1,
+    Math.ceil(responseTotal / RESPONSE_PAGE_SIZE),
+  );
+  const currentResponsePage = Math.min(responsePage, responsePageCount);
+  const responseStart = (currentResponsePage - 1) * RESPONSE_PAGE_SIZE;
+  const pagedResponses = data.responses.slice(
+    responseStart,
+    responseStart + RESPONSE_PAGE_SIZE,
+  );
+  const showResponsePage = (page: number) => {
+    const next = Math.min(Math.max(page, 1), responsePageCount);
+    setResponsePage(next);
+    setExpandedResponseId(null);
+  };
 
   return (
     <div className="stack page-enter">
@@ -516,7 +559,7 @@ export function AnalyticsPage() {
           </div>
 
           <div className="card table-wrap">
-            <h3 style={{ marginBottom: 12 }}>Последние ответы</h3>
+            <h3 style={{ marginBottom: 12 }}>Ответы</h3>
             <p className="muted" style={{ marginTop: -4, marginBottom: 12 }}>
               Нажмите на строку, чтобы увидеть ответы по вопросам. ФИО видно только
               по персональным ссылкам, если в опросе включена идентификация.
@@ -535,7 +578,7 @@ export function AnalyticsPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.responses.map((r) => {
+                {pagedResponses.map((r) => {
                   const open = expandedResponseId === r.id;
                   return (
                     <Fragment key={r.id}>
@@ -721,6 +764,57 @@ export function AnalyticsPage() {
                 })}
               </tbody>
             </table>
+            {responseTotal > 0 && (
+              <div className="analytics-pager">
+                <span className="muted">
+                  {responseStart + 1}–
+                  {Math.min(responseStart + RESPONSE_PAGE_SIZE, responseTotal)} из{' '}
+                  {responseTotal}
+                </span>
+                {responsePageCount > 1 && (
+                  <div className="analytics-pager-controls">
+                    <button
+                      type="button"
+                      className="analytics-pager-btn"
+                      disabled={currentResponsePage <= 1}
+                      onClick={() => showResponsePage(currentResponsePage - 1)}
+                    >
+                      Назад
+                    </button>
+                    {responsePageItems(currentResponsePage, responsePageCount).map(
+                      (item, index) =>
+                        item === 'gap' ? (
+                          <span key={`gap-${index}`} className="analytics-pager-gap">
+                            …
+                          </span>
+                        ) : (
+                          <button
+                            key={item}
+                            type="button"
+                            className={`analytics-pager-btn ${
+                              item === currentResponsePage ? 'active' : ''
+                            }`}
+                            aria-current={
+                              item === currentResponsePage ? 'page' : undefined
+                            }
+                            onClick={() => showResponsePage(item)}
+                          >
+                            {item}
+                          </button>
+                        ),
+                    )}
+                    <button
+                      type="button"
+                      className="analytics-pager-btn"
+                      disabled={currentResponsePage >= responsePageCount}
+                      onClick={() => showResponsePage(currentResponsePage + 1)}
+                    >
+                      Вперёд
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
