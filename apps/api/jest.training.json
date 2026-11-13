@@ -1,0 +1,6 @@
+{
+  "rootDir": ".",
+  "testRegex": "training/.*\\.spec\\.ts$",
+  "transform": { "^.+\\.ts$": "ts-jest" },
+  "testEnvironment": "node"
+}

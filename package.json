@@ -11,6 +11,7 @@
     "build": "npm run build -w @smartjob/api && npm run build -w @smartjob/web",
     "prisma:generate": "npm run prisma:generate -w @smartjob/api",
     "prisma:migrate": "npm run prisma:migrate -w @smartjob/api",
-    "seed": "npm run seed -w @smartjob/api"
+    "seed": "npm run seed -w @smartjob/api",
+    "test:training": "npm run test -w @smartjob/api -- --config jest.training.json --runInBand && node --experimental-strip-types --test --test-isolation=none apps/web/src/training/editor-state.test.mjs"
   }
 }

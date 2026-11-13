@@ -26,6 +26,7 @@ export function Layout() {
               <>
                 <NavLink to="/">Обзор</NavLink>
                 <NavLink to="/surveys">Опросы</NavLink>
+                <NavLink to="/training">Обучение</NavLink>
                 <NavLink to="/employees">Сотрудники</NavLink>
                 <NavLink to="/departments">Отделы</NavLink>
                 <NavLink to="/analytics">Аналитика</NavLink>

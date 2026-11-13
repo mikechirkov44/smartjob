@@ -88,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const setOrganizationId = (id: string) => {
+    if(id!==organizationId&&!window.dispatchEvent(new Event('smartjob-before-org-change',{cancelable:true})))return;
     setOrgId(id);
     localStorage.setItem(ORG_KEY, id);
   };
