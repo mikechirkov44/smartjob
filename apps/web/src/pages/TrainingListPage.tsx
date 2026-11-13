@@ -78,18 +78,11 @@ export function TrainingListPage() {
         {canEdit && (
           <div className="training-actions">
             <button
-              className="btn btn-primary"
-              disabled={busy}
-              onClick={() => void create("phishing")}
-            >
-              Добавить курс по фишингу
-            </button>
-            <button
               className="btn btn-secondary"
               disabled={busy}
               onClick={() => void create("blank")}
             >
-              Пустой курс
+              Создать курс
             </button>
           </div>
         )}
@@ -103,9 +96,9 @@ export function TrainingListPage() {
         <div className="card training-empty">Загрузка курсов…</div>
       ) : !items.length ? (
         <div className="card training-empty">
-          <h2>Начните с распознавания фишинга</h2>
+          <h2>Создайте первый курс</h2>
           <p>
-            Готовая теория и 10 примеров писем. Все материалы можно изменить под
+            Добавьте учебные материалы и задания под
             вашу компанию.
           </p>
         </div>

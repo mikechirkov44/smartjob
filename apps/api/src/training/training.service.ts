@@ -35,7 +35,7 @@ export class TrainingService {
   }
   async list(org: string) {
     return this.db.trainingCourse.findMany({
-      where: { organizationId: org },
+      where: { organizationId: org, status:{not:"DELETED"} },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
@@ -49,7 +49,7 @@ export class TrainingService {
   }
   async get(org: string, id: string) {
     const c = await this.db.trainingCourse.findFirst({
-      where: { id, organizationId: org },
+      where: { id, organizationId: org,status:{not:"DELETED"} },
     });
     if (!c) throw new NotFoundException('Курс не найден');
     return c;
@@ -121,7 +121,7 @@ export class TrainingService {
   async publish(org: string, id: string, draftVersion: string) {
     return this.db.$transaction(async (tx) => {
       const course = await tx.trainingCourse.findFirst({
-        where: { id, organizationId: org },
+        where: { id, organizationId: org,status:{not:"DELETED"} },
       });
       if (!course) throw new NotFoundException();
       if (course.updatedAt.toISOString() !== draftVersion)
@@ -144,6 +144,7 @@ export class TrainingService {
       return updated;
     });
   }
+  async remove(org:string,id:string){await this.get(org,id);return this.db.trainingCourse.update({where:{id},data:{status:'DELETED'}});}
   async close(org: string, id: string) {
     await this.get(org, id);
     return this.db.trainingCourse.update({

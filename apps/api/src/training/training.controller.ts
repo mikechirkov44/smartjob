@@ -1,4 +1,5 @@
 import {
+  Delete,
   Body,
   Controller,
   Get,
@@ -87,6 +88,7 @@ export class TrainingController {
   ) {
     return this.service.duplicate(org, id);
   }
+  @Delete(':id') remove(@Param('organizationId') org:string,@Param('id') id:string){return this.service.remove(org,id);}
   @Get(':id/attempts') results(
     @Param('organizationId') org: string,
     @Param('id') id: string,

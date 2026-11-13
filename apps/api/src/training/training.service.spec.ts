@@ -99,3 +99,5 @@ describe('TrainingService', () => {
     await expect(service.complete('secret')).rejects.toThrow();
   });
 });
+
+it('archives deleted courses without destroying attempts',async()=>{const db:any={trainingCourse:{findFirst:jest.fn().mockResolvedValue({id:'c'}),update:jest.fn().mockResolvedValue({status:'DELETED'})}};await new TrainingService(db).remove('org','c');expect(db.trainingCourse.update).toHaveBeenCalledWith({where:{id:'c'},data:{status:'DELETED'}});});

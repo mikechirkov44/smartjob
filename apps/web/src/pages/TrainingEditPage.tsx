@@ -24,6 +24,8 @@ export function TrainingEditPage() {
     user?.organizations.some(
       (o) => o.id === organizationId && o.role !== "VIEWER",
     );
+  const [deleted,setDeleted]=useState(false);
+  useEffect(()=>{if(deleted)navigate("/training");},[deleted,navigate]);
   const dirty = !!content && JSON.stringify(content) !== saved;
   useEffect(() => {
     let live = true;
@@ -49,7 +51,7 @@ export function TrainingEditPage() {
       live = false;
     };
   }, [id, organizationId, token]);
-  const blocker = useBlocker(dirty);
+  const blocker = useBlocker(dirty&&!deleted);
   useEffect(() => {
     if (blocker.state === "blocked") {
       if (window.confirm("Есть несохранённые изменения. Уйти со страницы?"))
@@ -596,6 +598,7 @@ export function TrainingEditPage() {
           </section>
         </>
       )}
+      <button className="btn btn-secondary" disabled={busy} onClick={async()=>{if(!window.confirm('Удалить курс? Ссылка перестанет работать. История прохождений сохранится в архиве.'))return;setBusy(true);try{await api(path,{method:'DELETE',token,organizationId});setDeleted(true);}catch(e){setError(errorText(e));}finally{setBusy(false);}}}>Удалить курс</button>
       <div className="training-notice">
         Редактирование меняет черновик. Сотрудники увидят новую версию после
         публикации. Начатые попытки и старые результаты останутся привязаны к
