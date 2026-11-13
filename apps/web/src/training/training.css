@@ -1,0 +1,368 @@
+.training-page {
+  max-width: 1100px;
+  margin: auto;
+}
+.training-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.training-kicker {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  font-size: 11px;
+  font-weight: 750;
+  color: #477363;
+  margin-bottom: 10px;
+}
+.training-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.training-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+.training-course {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px;
+  border-top: 4px solid #3a8068;
+}
+.training-course h2 {
+  font-size: 21px;
+  margin: 0;
+}
+.training-course p {
+  margin: 0;
+  color: #69756e;
+}
+.training-notice {
+  padding: 15px 18px;
+  border-radius: 12px;
+  background: #edf4f0;
+  color: #294b3b;
+  line-height: 1.6;
+}
+.training-error {
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #fff0ee;
+  color: #992f24;
+  white-space: pre-wrap;
+}
+.training-success {
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #e6f5ec;
+  color: #246040;
+}
+.training-form {
+  display: grid;
+  gap: 16px;
+}
+.training-form label {
+  display: grid;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.training-form input,
+.training-form textarea,
+.training-form select {
+  width: 100%;
+  border: 1px solid #cfd9d2;
+  border-radius: 9px;
+  padding: 11px 13px;
+  background: #fff;
+  color: #20392e;
+  font: inherit;
+  box-sizing: border-box;
+}
+.training-form textarea {
+  min-height: 110px;
+  resize: vertical;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.training-form input:focus,
+.training-form textarea:focus {
+  outline: 2px solid #75ab94;
+  outline-offset: 2px;
+}
+.training-section {
+  padding: 25px;
+}
+.training-section h2 {
+  font-size: 22px;
+  margin: 0 0 14px;
+}
+.training-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.training-editor-block {
+  padding: 20px;
+  border: 1px solid #dae3dc;
+  border-radius: 14px;
+  background: #fafcf9;
+  margin-top: 14px;
+  display: grid;
+  gap: 14px;
+}
+.training-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.training-block-head strong {
+  font-size: 14px;
+}
+.training-block-head button {
+  padding: 6px 10px;
+}
+.training-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 14px;
+  background: #fffef8ef;
+  backdrop-filter: blur(12px);
+  border: 1px solid #d8e1da;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.training-editor-block img,
+.training-editor-block video {
+  max-height: 260px;
+  max-width: 100%;
+  border-radius: 9px;
+}
+.lesson-blocks {
+  display: grid;
+  gap: 22px;
+}
+.lesson-block figure {
+  margin: 0;
+}
+.lesson-block img,
+.lesson-block video {
+  display: block;
+  max-width: 100%;
+  max-height: 580px;
+  border-radius: 12px;
+  margin: auto;
+}
+.lesson-block figcaption {
+  font-size: 14px;
+  text-align: center;
+  color: #64736a;
+  margin: 10px 0;
+}
+.training-prose {
+  white-space: pre-wrap;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+.training-public {
+  max-width: 760px;
+  margin: 48px auto;
+  padding: 0 20px 50px;
+}
+.training-public .card {
+  padding: 32px;
+}
+.training-public h1 {
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin: 0 0 16px;
+}
+.training-public .training-notice {
+  margin: 20px 0;
+}
+.training-progress {
+  margin: 24px 0;
+}
+.training-progress progress {
+  width: 100%;
+  height: 9px;
+  accent-color: #397a60;
+}
+.training-email {
+  border: 1px solid #cddbd2;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+}
+.email-top {
+  padding: 22px;
+  background: #f1f5f1;
+  border-bottom: 1px solid #dce5df;
+}
+.email-top h2 {
+  font-size: 21px;
+  margin: 0 0 20px;
+}
+.email-top details {
+  margin-top: 12px;
+}
+.email-top summary {
+  cursor: pointer;
+  color: #2d6a54;
+  font-size: 14px;
+}
+.email-top code {
+  display: block;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+}
+.email-body {
+  padding: 25px;
+}
+.email-link {
+  padding: 20px 25px;
+  border-top: 1px solid #e3e9e5;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.email-link code {
+  color: #3c6554;
+  overflow-wrap: anywhere;
+}
+.email-link small {
+  color: #728077;
+}
+.training-answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 22px 0;
+}
+.training-answers .btn {
+  padding: 18px;
+  font-size: 16px;
+}
+.training-feedback {
+  padding: 22px;
+  border-radius: 14px;
+  background: #edf4ef;
+  border: 1px solid #c9ddcf;
+  margin: 20px 0;
+  line-height: 1.7;
+}
+.training-feedback.wrong {
+  background: #fff6e8;
+  border-color: #e8d3ac;
+}
+.training-score {
+  font-size: 68px;
+  line-height: 1;
+  font-weight: 750;
+  color: #327555;
+  margin: 24px 0 12px;
+}
+.training-result-details {
+  padding: 18px 0;
+  border-top: 1px solid #e2e8e3;
+}
+.training-result-details summary {
+  cursor: pointer;
+}
+.training-table-wrap {
+  overflow: auto;
+}
+.training-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.training-table th,
+.training-table td {
+  text-align: left;
+  padding: 14px 12px;
+  border-bottom: 1px solid #e0e7e2;
+  vertical-align: top;
+}
+.training-table th {
+  color: #607066;
+  font-weight: 600;
+}
+.training-table details {
+  min-width: 190px;
+}
+.training-table details p {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+.training-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.training-upload {
+  border: 1px dashed #9ebba9;
+  padding: 14px;
+  border-radius: 10px;
+}
+.training-upload small {
+  font-weight: 400;
+  color: #607266;
+}
+.training-empty {
+  padding: 45px;
+  text-align: center;
+}
+.training-preview {
+  padding: 25px;
+  border: 2px dashed #96b9a3;
+  border-radius: 15px;
+  background: #f9fbf8;
+}
+.training-preview h2 {
+  margin-top: 0;
+}
+@media (max-width: 650px) {
+  .training-fields {
+    grid-template-columns: 1fr;
+  }
+  .training-public {
+    margin-top: 22px;
+    padding: 0 12px 30px;
+  }
+  .training-public .card {
+    padding: 21px;
+  }
+  .training-section {
+    padding: 18px;
+  }
+  .training-answers {
+    grid-template-columns: 1fr;
+  }
+  .training-toolbar {
+    position: static;
+  }
+  .training-block-head {
+    align-items: flex-start;
+  }
+  .training-block-head .training-actions {
+    gap: 4px;
+  }
+  .training-course {
+    padding: 20px;
+  }
+}

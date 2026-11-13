@@ -1,3 +1,4 @@
+import { TrainingModule } from './training/training.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -28,6 +29,7 @@ import { UploadsModule } from './uploads/uploads.module';
     PublicModule,
     AnalyticsModule,
     UploadsModule,
+    TrainingModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,3 +1,7 @@
+import { TrainingListPage } from './pages/TrainingListPage';
+import { TrainingEditPage } from './pages/TrainingEditPage';
+import { TrainingResultsPage } from './pages/TrainingResultsPage';
+import { PublicTrainingPage } from './pages/PublicTrainingPage';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth';
 import { Layout } from './components/Layout';
@@ -24,6 +28,7 @@ function Protected({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
+      <Route path="/learn/:linkToken" element={<PublicTrainingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/s/:token" element={<PublicSurveyPage />} />
       <Route
@@ -39,6 +44,9 @@ export default function App() {
         <Route path="/surveys/new" element={<SurveyCreatePage />} />
         <Route path="/surveys/:id/edit" element={<SurveyEditPage />} />
         <Route path="/surveys/:id" element={<SurveyDetailPage />} />
+        <Route path="/training" element={<TrainingListPage />} />
+        <Route path="/training/:id/edit" element={<TrainingEditPage />} />
+        <Route path="/training/:id/results" element={<TrainingResultsPage />} />
         <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/departments" element={<DepartmentsPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />

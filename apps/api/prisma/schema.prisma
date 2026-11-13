@@ -68,6 +68,7 @@ model Organization {
   members      OrganizationMember[]
   departments  Department[]
   employees    Employee[]
+  trainingCourses TrainingCourse[]
   surveys      Survey[]
 }
 
@@ -208,4 +209,61 @@ model Answer {
 
   @@unique([responseId, questionId])
   @@index([questionId])
+}
+
+model TrainingCourse {
+  id String @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields:[organizationId], references:[id], onDelete:Cascade)
+  title String
+  draft Json
+  status String @default("DRAFT")
+  token String @unique
+  publishedVersion Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  revisions TrainingRevision[]
+  @@index([organizationId])
+}
+model TrainingRevision {
+  id String @id @default(cuid())
+  courseId String
+  course TrainingCourse @relation(fields:[courseId],references:[id],onDelete:Cascade)
+  version Int
+  content Json
+  createdAt DateTime @default(now())
+  attempts TrainingAttempt[]
+  @@unique([courseId,version])
+}
+model TrainingAttempt {
+  id String @id @default(cuid())
+  token String @unique
+  revisionId String
+  revision TrainingRevision @relation(fields:[revisionId],references:[id],onDelete:Cascade)
+  participantName String
+  createdAt DateTime @default(now())
+  completedAt DateTime?
+  score Int?
+  passed Boolean?
+  answers TrainingAnswer[]
+  @@index([revisionId,createdAt])
+}
+model TrainingAnswer {
+  id String @id @default(cuid())
+  attemptId String
+  attempt TrainingAttempt @relation(fields:[attemptId],references:[id],onDelete:Cascade)
+  questionId String
+  choice Boolean
+  correct Boolean
+  createdAt DateTime @default(now())
+  @@unique([attemptId,questionId])
+}
+model TrainingMedia {
+  id String @id @default(cuid())
+  organizationId String
+  filename String @unique
+  mime String
+  size Int
+  createdAt DateTime @default(now())
+  @@index([organizationId])
 }
