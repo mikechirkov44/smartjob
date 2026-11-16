@@ -12,6 +12,7 @@ import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import type { RequestUser } from '../auth/auth.types';
 import {
+  evaluateAnswer,
   validateContent,
   publicContent,
   scoreAnswers,
@@ -35,7 +36,7 @@ export class TrainingService {
   }
   async list(org: string) {
     return this.db.trainingCourse.findMany({
-      where: { organizationId: org, status:{not:"DELETED"} },
+      where: { organizationId: org, status: { not: 'DELETED' } },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
@@ -49,7 +50,7 @@ export class TrainingService {
   }
   async get(org: string, id: string) {
     const c = await this.db.trainingCourse.findFirst({
-      where: { id, organizationId: org,status:{not:"DELETED"} },
+      where: { id, organizationId: org, status: { not: 'DELETED' } },
     });
     if (!c) throw new NotFoundException('Курс не найден');
     return c;
@@ -121,7 +122,7 @@ export class TrainingService {
   async publish(org: string, id: string, draftVersion: string) {
     return this.db.$transaction(async (tx) => {
       const course = await tx.trainingCourse.findFirst({
-        where: { id, organizationId: org,status:{not:"DELETED"} },
+        where: { id, organizationId: org, status: { not: 'DELETED' } },
       });
       if (!course) throw new NotFoundException();
       if (course.updatedAt.toISOString() !== draftVersion)
@@ -144,7 +145,13 @@ export class TrainingService {
       return updated;
     });
   }
-  async remove(org:string,id:string){await this.get(org,id);return this.db.trainingCourse.update({where:{id},data:{status:'DELETED'}});}
+  async remove(org: string, id: string) {
+    await this.get(org, id);
+    return this.db.trainingCourse.update({
+      where: { id },
+      data: { status: 'DELETED' },
+    });
+  }
   async close(org: string, id: string) {
     await this.get(org, id);
     return this.db.trainingCourse.update({
@@ -239,18 +246,34 @@ export class TrainingService {
       participantName: a.participantName,
       version: a.revision.version,
       content: publicContent(c),
-      answers: a.answers.map((v) => this.feedback(c, v.questionId, v.choice)),
+      answers: a.answers.map((v) =>
+        this.feedback(c, v.questionId, v.choice, v.selection),
+      ),
       completedAt: a.completedAt,
       result: a.completedAt ? scoreAnswers(c, a.answers) : null,
     };
   }
-  feedback(c: TrainingContent, id: string, choice: boolean) {
+  feedback(
+    c: TrainingContent,
+    id: string,
+    choice?: boolean,
+    selection?: unknown,
+  ) {
     const q = c.questions.find((q) => q.id === id);
     if (!q) throw new BadRequestException('Задание не найдено');
     return {
       questionId: id,
-      choice,
-      correct: choice === q.phishing,
+      choice: !q.type || q.type === 'email' ? choice : undefined,
+      correct: evaluateAnswer(q, choice, selection),
+      ...(q.type && q.type !== 'email'
+        ? {
+            selection,
+            correctOptionIds: q.correctOptionIds,
+            correctLabels: q.options
+              ?.filter((o) => q.correctOptionIds?.includes(o.id))
+              .map((o) => o.text),
+          }
+        : {}),
       phishing: q.phishing,
       explanation: q.explanation,
     };
@@ -274,22 +297,26 @@ export class TrainingService {
       }
     }
   }
-  async answer(t: string, id: string, choice: boolean) {
+  async answer(t: string, id: string, choice?: boolean, selection?: unknown) {
     return this.serial(async (tx) => {
       const a = await this.loadAttempt(t, tx);
       const c = a.revision.content as unknown as TrainingContent;
       const existing = a.answers.find((v) => v.questionId === id);
-      if (existing) return this.feedback(c, id, existing.choice);
+      if (existing)
+        return this.feedback(c, id, existing.choice, existing.selection);
       if (a.completedAt) throw new ConflictException('Попытка завершена');
       const next = c.questions[a.answers.length];
       if (!next || next.id !== id)
         throw new BadRequestException('Отвечайте на задания по порядку');
-      const feedback = this.feedback(c, id, choice);
+      const feedback = this.feedback(c, id, choice, selection);
       await tx.trainingAnswer.create({
         data: {
           attemptId: a.id,
           questionId: id,
-          choice,
+          choice: choice ?? false,
+          ...(Array.isArray(selection)
+            ? { selection: selection as Prisma.InputJsonValue }
+            : {}),
           correct: feedback.correct,
         },
       });

@@ -132,7 +132,7 @@
 }
 .training-toolbar {
   position: sticky;
-  top: 0;
+  top: 80px;
   z-index: 10;
   padding: 14px;
   background: #fffef8ef;
@@ -364,5 +364,60 @@
   }
   .training-course {
     padding: 20px;
+  }
+}
+
+.training-options {
+  border: 0;
+  padding: 12px 0;
+  margin: 12px 0 20px;
+  display: grid;
+  gap: 12px;
+}
+.training-options legend {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.training-options label {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid #cbdacf;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.training-options input {
+  margin-top: 4px;
+  accent-color: #397a60;
+}
+.training-option-editor {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.training-option-editor input[type="checkbox"],
+.training-option-editor input[type="radio"] {
+  width: 20px;
+  flex: 0 0 20px;
+}
+.training-option-editor input:not([type="checkbox"]):not([type="radio"]) {
+  flex: 1;
+}
+.training-template-picker {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.training-template-picker select {
+  max-width: 320px;
+}
+@media (max-width: 650px) {
+  .training-option-editor {
+    flex-wrap: wrap;
+  }
+  .training-option-editor button {
+    margin-left: 32px;
   }
 }

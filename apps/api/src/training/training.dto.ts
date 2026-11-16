@@ -1,4 +1,6 @@
 import {
+  IsArray,
+  ArrayMaxSize,
   IsObject,
   IsString,
   IsBoolean,
@@ -16,7 +18,12 @@ export class StartTrainingDto {
 }
 export class TrainingAnswerDto {
   @IsString() @MaxLength(100) questionId!: string;
-  @IsBoolean() choice!: boolean;
+  @IsOptional() @IsBoolean() choice?: boolean;
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  selection?: string[];
 }
 
 export class PublishTrainingDto {

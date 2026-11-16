@@ -7,6 +7,9 @@ export type LessonBlock = {
   caption?: string;
 };
 export type TrainingQuestion = {
+  type?: 'email' | 'single' | 'multi' | 'situation' | 'truefalse';
+  options?: { id: string; text: string }[];
+  correctOptionIds?: string[];
   id: string;
   subject: string;
   sender: string;
@@ -89,6 +92,41 @@ export function validateContent(
       if (!text(q[k], k === 'body' || k === 'explanation' ? 20000 : 1000))
         return fail();
     }
+    const kind = q.type || 'email';
+    if (!['email', 'single', 'multi', 'situation', 'truefalse'].includes(kind))
+      return fail();
+    if (kind !== 'email') {
+      if (
+        !Array.isArray(q.options) ||
+        q.options.length < 2 ||
+        q.options.length > 10 ||
+        q.options.some(
+          (o) =>
+            !o ||
+            !text(o.id, 100) ||
+            !o.id ||
+            !text(o.text, 2000) ||
+            (publish && !o.text.trim()),
+        ) ||
+        new Set(q.options.map((o) => o.id)).size !== q.options.length
+      )
+        return fail();
+      if (
+        !Array.isArray(q.correctOptionIds) ||
+        new Set(q.correctOptionIds).size !== q.correctOptionIds.length ||
+        q.correctOptionIds.some((id) => !q.options!.some((o) => o.id === id)) ||
+        (publish && !q.correctOptionIds.length) ||
+        (kind !== 'multi' && q.correctOptionIds.length > 1)
+      )
+        return fail();
+      if (
+        kind === 'truefalse' &&
+        (q.options.length !== 2 ||
+          !q.options.some((o) => o.id === 'true') ||
+          !q.options.some((o) => o.id === 'false'))
+      )
+        return fail();
+    }
     if (
       typeof q.phishing !== 'boolean' ||
       (publish &&
@@ -116,6 +154,13 @@ export function validateContent(
     })),
     questions: c.questions.map((q) => ({
       id: q.id,
+      ...(q.type ? { type: q.type } : {}),
+      ...(q.type && q.type !== 'email'
+        ? {
+            options: q.options!.map((o) => ({ id: o.id, text: o.text })),
+            correctOptionIds: [...q.correctOptionIds!],
+          }
+        : {}),
       subject: q.subject,
       sender: q.sender,
       address: q.address,
@@ -131,13 +176,41 @@ export function publicContent(content: TrainingContent) {
   return {
     ...content,
     questions: content.questions.map(
-      ({ phishing: _p, explanation: _e, ...q }) => q,
+      ({ phishing: _p, explanation: _e, correctOptionIds: _keys, ...q }) => q,
     ),
   };
 }
+export function evaluateAnswer(
+  q: TrainingQuestion,
+  choice?: boolean,
+  selection?: unknown,
+): boolean {
+  if (!q.type || q.type === 'email') {
+    if (
+      typeof choice !== 'boolean' ||
+      (selection !== undefined && selection !== null)
+    )
+      throw new BadRequestException('Выберите оценку письма');
+    return choice === q.phishing;
+  }
+  if (
+    !Array.isArray(selection) ||
+    !selection.length ||
+    selection.some(
+      (id) => typeof id !== 'string' || !q.options?.some((o) => o.id === id),
+    ) ||
+    new Set(selection).size !== selection.length ||
+    (q.type !== 'multi' && selection.length !== 1)
+  )
+    throw new BadRequestException('Выберите допустимые варианты ответа');
+  const keys = q.correctOptionIds || [];
+  return (
+    keys.length === selection.length && keys.every((k) => selection.includes(k))
+  );
+}
 export function scoreAnswers(
   content: TrainingContent,
-  answers: { questionId: string; choice: boolean }[],
+  answers: { questionId: string; choice?: boolean; selection?: unknown }[],
 ) {
   if (
     answers.length !== content.questions.length ||
@@ -146,7 +219,9 @@ export function scoreAnswers(
   )
     throw new BadRequestException('Сначала ответьте на все задания');
   const correct = content.questions.filter((q) =>
-    answers.some((a) => a.questionId === q.id && a.choice === q.phishing),
+    answers.some(
+      (a) => a.questionId === q.id && evaluateAnswer(q, a.choice, a.selection),
+    ),
   ).length;
   const score = Math.floor((correct / content.questions.length) * 100);
   return {

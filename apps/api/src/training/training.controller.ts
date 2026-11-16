@@ -88,7 +88,12 @@ export class TrainingController {
   ) {
     return this.service.duplicate(org, id);
   }
-  @Delete(':id') remove(@Param('organizationId') org:string,@Param('id') id:string){return this.service.remove(org,id);}
+  @Delete(':id') remove(
+    @Param('organizationId') org: string,
+    @Param('id') id: string,
+  ) {
+    return this.service.remove(org, id);
+  }
   @Get(':id/attempts') results(
     @Param('organizationId') org: string,
     @Param('id') id: string,
@@ -112,7 +117,7 @@ export class PublicTrainingController {
     @Param('token') t: string,
     @Body() dto: TrainingAnswerDto,
   ) {
-    return this.service.answer(t, dto.questionId, dto.choice);
+    return this.service.answer(t, dto.questionId, dto.choice, dto.selection);
   }
   @Post('attempts/:token/complete') complete(@Param('token') t: string) {
     return this.service.complete(t);

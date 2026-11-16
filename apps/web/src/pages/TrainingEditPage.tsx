@@ -1,3 +1,9 @@
+import { AssignmentView, AssignmentEditor } from "../training/Assignment";
+import {
+  questionTypeLabel,
+  blankQuestion,
+  answerLabel,
+} from "../training/types";
 import { preserveNewerEdits } from "../training/editor-state";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useBlocker } from "react-router-dom";
@@ -5,7 +11,7 @@ import { api, uploadFile } from "../api";
 import { useAuth } from "../auth";
 import type { Content, Course, LessonBlock, Question } from "../training/types";
 import { errorText, statusText } from "../training/types";
-import { LessonViewer, EmailExercise } from "../training/LessonViewer";
+import { LessonViewer } from "../training/LessonViewer";
 import "../training/training.css";
 export function TrainingEditPage() {
   const { id } = useParams();
@@ -18,14 +24,18 @@ export function TrainingEditPage() {
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [newType, setNewType] =
+    useState<NonNullable<Question["type"]>>("single");
   const [preview, setPreview] = useState(false);
   const canEdit =
     user?.globalRole === "SUPER_ADMIN" ||
     user?.organizations.some(
       (o) => o.id === organizationId && o.role !== "VIEWER",
     );
-  const [deleted,setDeleted]=useState(false);
-  useEffect(()=>{if(deleted)navigate("/training");},[deleted,navigate]);
+  const [deleted, setDeleted] = useState(false);
+  useEffect(() => {
+    if (deleted) navigate("/training");
+  }, [deleted, navigate]);
   const dirty = !!content && JSON.stringify(content) !== saved;
   useEffect(() => {
     let live = true;
@@ -51,7 +61,7 @@ export function TrainingEditPage() {
       live = false;
     };
   }, [id, organizationId, token]);
-  const blocker = useBlocker(dirty&&!deleted);
+  const blocker = useBlocker(dirty && !deleted);
   useEffect(() => {
     if (blocker.state === "blocked") {
       if (window.confirm("Есть несохранённые изменения. Уйти со страницы?"))
@@ -331,9 +341,11 @@ export function TrainingEditPage() {
           {content.questions.map((q, i) => (
             <div key={q.id} style={{ marginTop: 24 }}>
               <p>Задание {i + 1}</p>
-              <EmailExercise question={q} />
+              <AssignmentView question={q} preview />
               <div className="training-feedback">
-                <strong>{q.phishing ? "Фишинг" : "Безопасное письмо"}</strong>
+                <strong>
+                  {answerLabel(q, q.phishing, q.correctOptionIds)}
+                </strong>
                 <p>{q.explanation}</p>
               </div>
             </div>
@@ -477,10 +489,10 @@ export function TrainingEditPage() {
             </div>
           </section>
           <section className="card training-section training-form">
-            <h2>Практика: письма</h2>
+            <h2>Практические задания</h2>
             <p className="muted">
-              Разбор показывается сразу после ответа. Адреса в примерах не
-              открываются как ссылки.
+              Выберите подходящий тип задания. Разбор показывается сразу после
+              ответа.
             </p>
             {content.questions.map((q, i) => (
               <div className="training-editor-block" key={q.id}>
@@ -489,102 +501,84 @@ export function TrainingEditPage() {
                   {tools("questions", i, content.questions.length)}
                 </div>
                 <label>
-                  Тема письма
-                  <input
-                    maxLength={1000}
-                    value={q.subject}
-                    onChange={(e) =>
-                      question(q.id, { subject: e.target.value })
-                    }
-                  />
-                </label>
-                <div className="training-fields">
-                  <label>
-                    Имя отправителя
-                    <input
-                      maxLength={1000}
-                      value={q.sender}
-                      onChange={(e) =>
-                        question(q.id, { sender: e.target.value })
-                      }
-                    />
-                  </label>
-                  <label>
-                    Адрес отправителя
-                    <input
-                      maxLength={1000}
-                      value={q.address}
-                      onChange={(e) =>
-                        question(q.id, { address: e.target.value })
-                      }
-                    />
-                  </label>
-                </div>
-                <label>
-                  Текст письма
-                  <textarea
-                    rows={4}
-                    maxLength={20000}
-                    value={q.body}
-                    onChange={(e) => question(q.id, { body: e.target.value })}
-                  />
-                </label>
-                <label>
-                  Адрес ссылки в письме
-                  <input
-                    maxLength={1000}
-                    value={q.link}
-                    onChange={(e) => question(q.id, { link: e.target.value })}
-                  />
-                </label>
-                <label>
-                  Правильный ответ
+                  Тип задания
                   <select
-                    value={q.phishing ? "phishing" : "safe"}
-                    onChange={(e) =>
+                    value={q.type || "email"}
+                    onChange={(e) => {
+                      if (
+                        !window.confirm(
+                          "Сменить тип задания? Варианты и правильные ответы будут сброшены.",
+                        )
+                      )
+                        return;
+                      const next = blankQuestion(
+                        e.target.value as NonNullable<Question["type"]>,
+                      );
                       question(q.id, {
-                        phishing: e.target.value === "phishing",
-                      })
-                    }
+                        ...next,
+                        id: q.id,
+                        subject: q.subject,
+                        body: q.body,
+                        explanation: q.explanation,
+                      });
+                    }}
                   >
-                    <option value="phishing">Фишинг</option>
-                    <option value="safe">Безопасное письмо</option>
+                    {(
+                      [
+                        "email",
+                        "single",
+                        "multi",
+                        "situation",
+                        "truefalse",
+                      ] as const
+                    ).map((t) => (
+                      <option key={t} value={t}>
+                        {questionTypeLabel(t)}
+                      </option>
+                    ))}
                   </select>
                 </label>
-                <label>
-                  Объяснение после ответа
-                  <textarea
-                    maxLength={20000}
-                    value={q.explanation}
-                    onChange={(e) =>
-                      question(q.id, { explanation: e.target.value })
-                    }
-                  />
-                </label>
+                <AssignmentEditor
+                  question={q}
+                  onChange={(v) => question(q.id, v)}
+                />
               </div>
             ))}
-            <button
-              className="btn btn-secondary"
-              onClick={() =>
-                change({
-                  questions: [
-                    ...content.questions,
-                    {
-                      id: `block-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-                      subject: "",
-                      sender: "",
-                      address: "",
-                      body: "",
-                      link: "",
-                      phishing: true,
-                      explanation: "",
-                    },
-                  ],
-                })
-              }
-            >
-              + Добавить задание
-            </button>
+            <div className="training-template-picker">
+              <label>
+                Пустой шаблон задания
+                <select
+                  value={newType}
+                  onChange={(e) =>
+                    setNewType(e.target.value as NonNullable<Question["type"]>)
+                  }
+                >
+                  {(
+                    [
+                      "email",
+                      "single",
+                      "multi",
+                      "situation",
+                      "truefalse",
+                    ] as const
+                  ).map((t) => (
+                    <option key={t} value={t}>
+                      {questionTypeLabel(t)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                className="btn btn-secondary"
+                onClick={() =>
+                  change({
+                    questions: [...content.questions, blankQuestion(newType)],
+                  })
+                }
+              >
+                + Добавить задание
+              </button>
+            </div>
           </section>
           <section className="card training-section training-form">
             <h2>Памятка после курса</h2>
@@ -598,7 +592,29 @@ export function TrainingEditPage() {
           </section>
         </>
       )}
-      <button className="btn btn-secondary" disabled={busy} onClick={async()=>{if(!window.confirm('Удалить курс? Ссылка перестанет работать. История прохождений сохранится в архиве.'))return;setBusy(true);try{await api(path,{method:'DELETE',token,organizationId});setDeleted(true);}catch(e){setError(errorText(e));}finally{setBusy(false);}}}>Удалить курс</button>
+      <button
+        className="btn btn-secondary"
+        disabled={busy}
+        onClick={async () => {
+          if (
+            !window.confirm(
+              "Удалить курс? Ссылка перестанет работать. История прохождений сохранится в архиве.",
+            )
+          )
+            return;
+          setBusy(true);
+          try {
+            await api(path, { method: "DELETE", token, organizationId });
+            setDeleted(true);
+          } catch (e) {
+            setError(errorText(e));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        Удалить курс
+      </button>
       <div className="training-notice">
         Редактирование меняет черновик. Сотрудники увидят новую версию после
         публикации. Начатые попытки и старые результаты останутся привязаны к

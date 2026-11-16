@@ -1,3 +1,4 @@
+import { answerLabel } from "../training/types";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
@@ -13,7 +14,12 @@ type Item = {
   score: number | null;
   passed: boolean | null;
   revision: { version: number; content: Content };
-  answers: { questionId: string; choice: boolean; correct: boolean }[];
+  answers: {
+    questionId: string;
+    choice: boolean;
+    selection?: string[];
+    correct: boolean;
+  }[];
 };
 export function TrainingResultsPage() {
   const { id } = useParams();
@@ -139,12 +145,12 @@ export function TrainingResultsPage() {
                               </strong>
                               <p>
                                 {v
-                                  ? `Ответ: ${v.choice ? "Фишинг" : "Безопасное письмо"} · ${v.correct ? "верно" : "ошибка"}`
+                                  ? `Ответ: ${answerLabel(q, v.choice, v.selection)} · ${v.correct ? "верно" : "ошибка"}`
                                   : "Нет ответа"}
                               </p>
                               <p>
                                 Правильно:{" "}
-                                {q.phishing ? "Фишинг" : "Безопасное письмо"}
+                                {answerLabel(q, q.phishing, q.correctOptionIds)}
                               </p>
                               <p>{q.explanation}</p>
                             </div>

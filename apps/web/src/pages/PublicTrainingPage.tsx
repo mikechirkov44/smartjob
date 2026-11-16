@@ -1,8 +1,9 @@
+import { AssignmentView, AssignmentAnswer } from "../training/Assignment";
 import { forgetAttempt } from "../training/editor-state";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api";
-import { LessonViewer, EmailExercise } from "../training/LessonViewer";
+import { LessonViewer } from "../training/LessonViewer";
 import { errorText } from "../training/types";
 import type { Attempt, Feedback, Score } from "../training/types";
 import "../training/training.css";
@@ -102,14 +103,20 @@ export function PublicTrainingPage() {
       setBusy(false);
     }
   }
-  async function answer(choice: boolean) {
+  async function answer(choice?: boolean, selection?: string[]) {
     if (!attempt) return;
     setBusy(true);
     setError("");
     try {
       const f = await api<Feedback>(
         `/public/training/attempts/${attempt.token}/answers`,
-        { body: { questionId: attempt.content.questions[index].id, choice } },
+        {
+          body: {
+            questionId: attempt.content.questions[index].id,
+            choice,
+            selection,
+          },
+        },
       );
       setAttempt((a) =>
         a
@@ -232,26 +239,17 @@ export function PublicTrainingPage() {
                     max={c.questions.length}
                   />
                 </div>
-                <EmailExercise key={q.id} question={q} />
+                <AssignmentView key={q.id} question={q} />
                 {!f ? (
                   <>
-                    <p style={{ marginTop: 20 }}>Как вы оцените это письмо?</p>
-                    <div className="training-answers">
-                      <button
-                        className="btn btn-primary"
-                        disabled={busy}
-                        onClick={() => void answer(true)}
-                      >
-                        Фишинг
-                      </button>
-                      <button
-                        className="btn btn-secondary"
-                        disabled={busy}
-                        onClick={() => void answer(false)}
-                      >
-                        Безопасное письмо
-                      </button>
-                    </div>
+                    <AssignmentAnswer
+                      key={q.id}
+                      question={q}
+                      busy={busy}
+                      onAnswer={(choice, selection) =>
+                        void answer(choice, selection)
+                      }
+                    />
                   </>
                 ) : (
                   <>
@@ -265,7 +263,8 @@ export function PublicTrainingPage() {
                       <p>
                         Правильный ответ:{" "}
                         <strong>
-                          {f.phishing ? "Фишинг" : "Безопасное письмо"}
+                          {f.correctLabels?.join("; ") ||
+                            (f.phishing ? "Фишинг" : "Безопасное письмо")}
                         </strong>
                       </p>
                       <p className="training-prose">{f.explanation}</p>
@@ -278,7 +277,7 @@ export function PublicTrainingPage() {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
                       >
-                        Следующее письмо →
+                        Следующее задание →
                       </button>
                     ) : (
                       <button
@@ -338,7 +337,10 @@ export function PublicTrainingPage() {
                         </strong>
                         <p>
                           Правильный ответ:{" "}
-                          {feedback?.phishing ? "Фишинг" : "Безопасное письмо"}
+                          {feedback?.correctLabels?.join("; ") ||
+                            (feedback?.phishing
+                              ? "Фишинг"
+                              : "Безопасное письмо")}
                         </p>
                         <p className="training-prose">
                           {feedback?.explanation}
@@ -380,7 +382,7 @@ export function PublicTrainingPage() {
             style={{ textAlign: "center", fontSize: 12, marginTop: 20 }}
           >
             Учебные примеры. Не вводите реальные пароли и не переходите по
-            адресам из писем.
+            адресам из учебных примеров.
           </p>
         </>
       )}

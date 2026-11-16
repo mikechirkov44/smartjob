@@ -6,6 +6,9 @@ export type LessonBlock = {
   caption?: string;
 };
 export type Question = {
+  type?: "email" | "single" | "multi" | "situation" | "truefalse";
+  options?: { id: string; text: string }[];
+  correctOptionIds?: string[];
   id: string;
   subject: string;
   sender: string;
@@ -34,7 +37,10 @@ export type Course = {
 };
 export type Feedback = {
   questionId: string;
-  choice: boolean;
+  choice?: boolean;
+  selection?: string[];
+  correctOptionIds?: string[];
+  correctLabels?: string[];
   correct: boolean;
   phishing: boolean;
   explanation: string;
@@ -58,3 +64,54 @@ export const statusText = (s: string) =>
   ({ DRAFT: "Черновик", ACTIVE: "Опубликован", CLOSED: "Закрыт" })[s] || s;
 export const errorText = (e: unknown) =>
   e instanceof Error ? e.message : "Не удалось выполнить действие";
+
+export const questionTypeLabel = (type?: Question["type"]) =>
+  ({
+    email: "Письмо",
+    single: "Один правильный ответ",
+    multi: "Несколько правильных ответов",
+    situation: "Рабочая ситуация",
+    truefalse: "Верно / Неверно",
+  })[type || "email"];
+export function answerLabel(
+  q: Question,
+  choice?: boolean,
+  selection?: string[],
+) {
+  return !q.type || q.type === "email"
+    ? choice
+      ? "Фишинг"
+      : "Безопасное письмо"
+    : (q.options || [])
+        .filter((o) => selection?.includes(o.id))
+        .map((o) => o.text)
+        .join("; ");
+}
+export function blankQuestion(type: NonNullable<Question["type"]>): Question {
+  return {
+    id: `q-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    type,
+    subject: "",
+    body: "",
+    sender: "",
+    address: "",
+    link: "",
+    phishing: true,
+    explanation: "",
+    ...(type === "email"
+      ? {}
+      : {
+          options:
+            type === "truefalse"
+              ? [
+                  { id: "true", text: "Верно" },
+                  { id: "false", text: "Неверно" },
+                ]
+              : [
+                  { id: "a", text: "" },
+                  { id: "b", text: "" },
+                ],
+          correctOptionIds: [],
+        }),
+  };
+}

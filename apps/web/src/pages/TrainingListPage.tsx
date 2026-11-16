@@ -97,10 +97,7 @@ export function TrainingListPage() {
       ) : !items.length ? (
         <div className="card training-empty">
           <h2>Создайте первый курс</h2>
-          <p>
-            Добавьте учебные материалы и задания под
-            вашу компанию.
-          </p>
+          <p>Добавьте учебные материалы и задания под вашу компанию.</p>
         </div>
       ) : (
         <div className="training-grid">

@@ -37,14 +37,12 @@ describe('review regressions', () => {
     const db: any = {
       trainingMedia: {
         findFirst: jest.fn().mockResolvedValue({ mime: 'image/png' }),
-        findMany: jest
-          .fn()
-          .mockResolvedValue([
-            {
-              filename: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png',
-              mime: 'image/png',
-            },
-          ]),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            filename: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png',
+            mime: 'image/png',
+          },
+        ]),
       },
     };
     await expect(

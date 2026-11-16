@@ -254,6 +254,7 @@ model TrainingAnswer {
   attempt TrainingAttempt @relation(fields:[attemptId],references:[id],onDelete:Cascade)
   questionId String
   choice Boolean
+  selection Json?
   correct Boolean
   createdAt DateTime @default(now())
   @@unique([attemptId,questionId])
